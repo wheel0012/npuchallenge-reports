@@ -12,7 +12,7 @@
 | benchmark | `benchmark-results/2026-08-02-bos-mlp-w2-block-width-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `c83b94e4c27299d340eb6a3bc36cdd3c441f26f4872a8d220e74202b7e90d060` |
 | benchmark | `benchmark-results/2026-08-03-bos-64k-six-endpoint-sdpa-mlp-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `9c415d0068d6ac97e3873f654df58bdf3c6f7f0c8d8f5a77acea6a6958891595` |
 | benchmark | `benchmark-results/2026-08-03-bos-dram-read-write-pipeline.md` | canonical report (중앙 저장소에서 직접 작성) | `1f1174bd281279a76ad6110ba12426c8d263b7d6f0e3a00cfeedcdd11db9c407` |
-| benchmark | `benchmark-results/2026-08-03-bos-mlp-six-endpoint-fanout2-row-burst.md` | canonical report (중앙 저장소에서 직접 작성) | `d46cc7a9f5923f182aa6578274b3f154fedd7c857579312b7f20e8268f025feb` |
+| benchmark | `benchmark-results/2026-08-03-bos-mlp-six-endpoint-fanout2-row-burst.md` | canonical report (중앙 저장소에서 직접 작성) | `835df96a8bc64d4b47a8616b569355c36d149c00e67885e464fda5d05a442328` |
 | investigation | `investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md` | `/home/iris_hb4/2026npu/readme_llama32_test_demo_analysis.md` | `9aa3dfa5f61cdf13847e8488c867068fc96808a8faf4669ffaf3687263825872` |
 | investigation | `investigations/2026-07-25-llama31-8b-kv-cache.md` | `/home/iris_hb4/2026npu/readme_llama32_analysis.md` | `b9f4ab7f6c3bbb77ef323c7bd71bbbb242df0b72c2fcb0691d84fb2ae7991c3c` |
 | investigation | `investigations/2026-07-26-ttnn-visualizer-bos-blackhole-npe.md` | `/home/iris_hb4/TTNN_VISUALIZER_BOS_BLACKHOLE_NPE_REPORT_KO.md` | `afc2148ba76fa5bda226d8f81de20032bd291cf203d3b9bd16d2e56587ed8d8c` |
@@ -27,4 +27,4 @@
 | handoff | `handoffs/2026-07-21-qwen25-3b-32k-profiling.md` | `/home/iris_hb4/QWEN_AND_PROFILER_README.md` | `b7ccdfc275c11a2d554ae55bb8afdbf725316d999f404adf49a5b0adb36a2a4a` |
 | guide | `guides/gemm-benchmark-measurement.md` | `/home/iris_hb4/GEMM_BENCHMARK_GUIDE_KO.md` | `2c1c7858deb47870bd8b90b97484095fd4cbade1c2d09d37f043e0eeb1dd2643` |
 | guide | `guides/tt-metal-venv-path.md` | `/home/iris_hb4/TT_METAL_VENV_PATH_GUIDE_KO.md` | `da9bd20162b7d626ff2b83a5659eba1b6c65c1f11861b7cddc2b2d96541d06c9` |
-| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `19cd576a2cb0582cba230a383adcebcb03a20ef31b7e8ab59a4c1bc83aa35874` |
+| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `5df24d697058168efb6157839f8e8b43945fb242f07afbc164575527c312be4c` |

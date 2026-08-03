@@ -22,6 +22,7 @@ Performance and synchronization experiments are stored as separate runs; failed 
 | `mlp_decode_dram_sharded_w2_block16_page16k_counters_2026_08_03_07_05_00` | success | 같은 구성의 all-group performance-counter capture | FPU-active core는 20 program cores 중 6개뿐; 활성 core FPU util W1/W3 39--41%, W2 36--37% |
 | `mlp_fanout2_rowburst_counters_2026_08_03_08_30_00` | success | fanout-2 row-burst isolated MLP performance-counter capture | 12 FPU-active cores, 각 약 18.3--19.5%; pack/unpack/L1/instrn raw counter는 미생성 |
 | `mlp_fanout2_rowburst_noc_2026_08_03_08_35_00` | success, raw trace only | 같은 구성의 isolated NoC capture | reconstructed aggregate 48.60 GB/s; destinations 6:5:1; tt-npe import 실패로 timeline 없음 |
+| `mlp_fanout2_rowburst_balanced_noc_2026_08_03_09_15_00` | success, raw trace only | 5×4 partner placement로 NOC1 destination을 4:4:4로 교정한 isolated MLP | aggregate 62.93 GB/s; profiler-free mean 1.472280 ms; PCC 0.999641; tt-npe timeline 없음 |
 
 Visualizer-compatible performance artifacts are under each successful Tracy run's `perf_report_visualize/` directory.
 

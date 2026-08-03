@@ -224,7 +224,7 @@ env \
 - NoC event의 8,160 B 표현 한도 때문에 bandwidth는 raw `num_bytes` 합이 아니라 compile-time requested
   bytes로 복원했다.
 - pack/unpack/L1/instruction counter가 raw log에 생성되지 않아 세부 CB stall 분류는 남아 있다.
-- 다음 구현 후보는 `6:5:1` destination mapping을 `4:4:4`에 가깝게 교정하는 opt-in이다.
+- `6:5:1` destination mapping의 `4:4:4` 교정은 아래 후속 실험에서 완료했다.
 
 ## 관련 patch
 
@@ -232,3 +232,76 @@ env \
 - `/home/iris_hb4/tmp/codex-patches/20260803-074200-mlp-dram-fanout2-core-roles.patch`
 - `/home/iris_hb4/tmp/codex-patches/20260803-082500-mlp-fanout2-cache-key.patch`
 - `/home/iris_hb4/tmp/codex-patches/20260803-083500-mlp-fanout2-row-burst.patch`
+- `/home/iris_hb4/tmp/codex-patches/20260803-093200-mlp-balanced-endpoint-partners.patch`
+- `/home/iris_hb4/tmp/codex-patches/20260803-091000-mlp-balanced-physical-coordinates.patch` (compile 실패 경로)
+- `/home/iris_hb4/tmp/codex-patches/20260803-091600-mlp-balanced-full-grid.patch`
+
+## 후속: NOC1 destination 4:4:4 교정
+
+이 절의 결과가 위 `6:5:1` 결론과 다음 구현 후보를 대체한다. 환경변수
+`TT_METAL_MLP_DRAM_SHARDED_BALANCED_ENDPOINTS=1`을 추가한 opt-in이며, fanout-2와 NOC1 weight read에서만
+허용한다.
+
+### Host-side topology 확인
+
+관측한 주소 및 route 계약은 다음과 같다.
+
+- UMD Blackhole 물리 topology는 3 DRAM banks × bank당 2 NoC ports다.
+- BOS `blackhole_140_arch.yaml`은 이를 6개 DRAM view로 노출하고 view 0..5에
+  `0x1200000000`..`0x1700000000` address offset을 준다.
+- allocator는 6개 view를 동일 폭 logical DRAM shard로 취급한다.
+- BOS `get_noc_addr_from_bank_id<true>`에서 `bank_id`는 view offset 선택에 쓰이지만, NOC1 destination
+  endpoint는 reader core의 x 좌표 그룹으로 정해진다.
+- 기존 base reader 6개는 endpoint 그룹별 `3:2:1`이다. 4×4 input-storage grid에서 앞의 non-reader
+  6개를 partner로 고른 구현은 `+3:+3:+0`이 되어 raw trace의 `6:5:1`과 일치한다.
+
+따라서 첫 교정은 weight storage prepack이 아니라 reader placement다. balanced opt-in은 BOS 전체 5×4
+worker grid에서 partner를 고르고 base `3:2:1`에 `+1:+2:+3`을 보태 최종 `4:4:4`를 만든다. 기존
+fanout-2의 bank/view ID, half-shard address 계산, weight cache 및 output ownership은 바꾸지 않았다.
+
+첫 구현은 logical core를 virtual NoC 좌표로 바꾼 뒤 그룹화해 partner를 3개만 찾았고, device kernel
+launch 전 host `TT_FATAL`로 종료됐다. `DEVICE_CLOSED`, exit 1이며 timeout/signal/124/137은 없었다.
+runtime이 출력한 logical x→physical x `{0,1,2,3,4}`와 기존 raw trace를 대조해 logical x 분류 및 5×4
+후보로 교정했다.
+
+### Profiler-free 결과
+
+correctness/JIT 뒤 5회 표본은 다음과 같다.
+
+| 구성 | n | PCC | mean (ms) | median (ms) | min (ms) |
+|---|---:|---:|---:|---:|---:|
+| fanout-2 row burst, destination `6:5:1` | 5 | 0.999641 | 1.875653 | 1.869043 | 1.862983 |
+| fanout-2 row burst, destination `4:4:4` | 5 | 0.999641 | 1.472280 | 1.461554 | 1.457888 |
+
+새 sample은 `1.516636, 1.461554, 1.466939, 1.458381, 1.457888 ms`다. 기존 fanout row-burst 대비
+mean latency는 21.51% 감소했고 역수 처리율은 27.40% 증가했다. 기존 6-worker baseline
+1.898638 ms 대비 mean latency는 22.46% 감소했다. 두 성공 run 모두 `MLP_COMPLETED`, `DEVICE_CLOSED`,
+exit 0이다.
+
+### NoC capture 결과
+
+동일 binary의 profiler-free correctness와 latency를 먼저 통과한 뒤 correctness/JIT 1회와 measured 1회로
+분리 capture했다.
+
+```text
+/home/iris_hb4/profiler_runs/mlp_fanout2_rowburst_balanced_noc_2026_08_03_09_15_00
+```
+
+PCC 0.9996410623, `MLP_COMPLETED`, `DEVICE_CLOSED`, exit 0이며 raw NoC JSON, device CSV, ops CSV와 host
+Tracy artifact가 완성됐다. `tt-npe` import 실패로 NPE timeline은 없지만 raw capture는 정상이다.
+
+| Projection | Device kernel | Reconstructed read bytes | Direct bandwidth |
+|---|---:|---:|---:|
+| W1 | 437.009 us | 27,574,272 | 63.10 GB/s |
+| W3 | 440.292 us | 27,574,272 | 62.63 GB/s |
+| W2 | 423.948 us | 26,738,688 | 63.07 GB/s |
+| 합산 | 1.301249 ms | 81,887,232 | 62.93 GB/s |
+
+W1/W3/W2 모두 raw source→destination 수가 `(3,1):(2,1):(4,1) = 4:4:4`이고 모든 weight read는
+`NOC_1`이다. aggregate bandwidth는 기존 불균형 fanout의 48.60 GB/s보다 29.47% 높고, direct DRAM
+microbenchmark peak 86.83 GB/s의 72.48%다. 이 결과는 이번 MLP에서 storage 재배치보다 reader endpoint
+균형이 먼저였음을 실측으로 확인한다.
+
+다만 이는 isolated decode MLP 결과다. 64K full layer 및 전체 tokens/s 개선폭은 아직 측정하지 않았고,
+약 24 GB/s의 microbenchmark gap에는 CB/reshard/compute pipeline과 실제 matmul access pattern 차이가
+남아 있다.
