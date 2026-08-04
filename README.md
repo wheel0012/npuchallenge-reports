@@ -42,6 +42,7 @@
 - [BOS 64K SDPA 성능 최적화 이력](investigations/2026-08-01-sdpa-dram-performance-optimization-history.md)
 - [BOS 64K vanilla SDPA와 DRAM saturation 격차](investigations/2026-08-01-vanilla-sdpa-vs-dram-saturation-gap.md)
 - [BOS Flash Decode 4 idle-core helper 설계 조사](investigations/2026-08-01-sdpa-four-helper-buffering-design.md)
+- [BOS Llama 3.2 3B MLP 개선 조사](investigations/2026-08-04-bos-mlp-optimization-investigation.md)
 
 ### Incidents
 

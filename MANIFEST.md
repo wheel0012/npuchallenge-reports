@@ -26,6 +26,7 @@
 | investigation | `investigations/2026-08-01-sdpa-dram-performance-optimization-history.md` | canonical report (중앙 저장소에서 직접 작성) | `08c06cf5de0c8b071b6b5a82fabe24bf1fa90f1c2a4c5bf7853a4ff9a52fe8a9` |
 | investigation | `investigations/2026-08-01-vanilla-sdpa-vs-dram-saturation-gap.md` | canonical report (중앙 저장소에서 직접 작성) | `9ee9e23506d50336008764076744968cfa101e03247faf1f5ffd84a55b0aaf9d` |
 | investigation | `investigations/2026-08-01-sdpa-four-helper-buffering-design.md` | canonical report (중앙 저장소에서 직접 작성) | `a6d4b9000fc4adab5bec1c972c590ecd2f580b06593e762fcad54db816a7491a` |
+| investigation | `investigations/2026-08-04-bos-mlp-optimization-investigation.md` | canonical report (중앙 저장소에서 직접 작성) | `9b889d84b54a448e6634e7cfbcf52673a425e30ef2ca652175bc56cb33987db0` |
 | incident | `incidents/2026-07-31-blackhole-worker-fw-host-freeze.md` | `/home/iris_hb4/tt-metal-hb4/tests/tt_metal/tt_metal/perf_microbenchmark/12_dram_20_core_6_noc_read/INCIDENT_REPORT_2026_07_31_DEVICE_FREEZE.md` | `c835200868f68b245f4bd52e77a54e274996bdca36730a6c7f3cd6ed73008611` |
 | incident | `incidents/2026-08-01-bos-mlp-noc-profile-fw-init-failure.md` | canonical report (중앙 저장소에서 직접 작성) | `f8f97df2e72b9d0672a0271f107e993f4be6e369f0ff4bd9463c255885a7366b` |
 | incident | `incidents/2026-08-02-bos-sdpa-reduce-helper-deadlock.md` | canonical report (중앙 저장소에서 직접 작성) | `3a14bdd61b1a57d18621d0bd40fc74a597440049451f272cb4ff449110d7482c` |
