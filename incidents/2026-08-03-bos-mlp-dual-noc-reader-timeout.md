@@ -222,3 +222,93 @@ SDPA에서는 K-chunk 256이 약 70.266 GB/s이고 six-reader disjoint relay ref
 MLP는 기존 projection aggregate가 45.40 GB/s라 더 큰 memory headroom이 있지만, whole-layer
 effective bandwidth에는 GEMM과 elementwise 시간이 포함되므로 per-projection NoC와 TRISC를 함께
 보지 않고 memory-bound라고 단정하지 않는다.
+
+## 재발: 실제 6 endpoint × 3 reader fanout-3
+
+같은 날 후속 실험은 이전의 generic dual-NoC 3+3 split과 달리 BOS의 6개 worker DRAM endpoint를
+명시적으로 지정하고 endpoint마다 reader/compute 3개를 배정했다. host log에서 endpoint 분배
+`3:3:3:3:3:3`, reader NoC `9:9`, active reader/compute 18을 확인했다.
+
+profiler와 Watcher를 사용하지 않은 1-iteration correctness에서 W1/W2 program 생성 뒤 completion이
+없었다. 180초 SIGINT와 15초 cleanup 상한 뒤 SIGKILL, exit 137이며 `MLP_PCC`, `MLP_COMPLETED`,
+`DEVICE_CLOSED`는 없다. 종료 뒤 Python PID 11104는 PID 1 아래 zombie로 남았다. artifact는
+`/home/iris_hb4/profiler_runs/mlp_fanout3_dual_noc_3x6_correctness_2026_08_03_19_10_00/run.log`, SHA-256은
+`9f42c5f0cea9cdfc5d3ddd9b144db70b2cb125ae8afb0ddef332d9e00b0bd79f`다.
+
+### 추가 원인 분석
+
+관측 후 성공한 20-core/6-endpoint DRAM microbenchmark와 host-side 비교했다. microbenchmark는 같은
+endpoint와 같은 `(NoC, worker-row)` route의 edge가 VC를 공유하지 않도록 4-VC edge coloring을 한다.
+실패 당시 새 MLP 경로는 endpoint별 VC 하나를 고정해 endpoint당 reader 3개가 VC를 공유했다. 이 계약
+차이는 확인됐으며 read completion 정지의 가장 유력한 원인이지만 Watcher waypoint가 없어 확정 원인은
+아니다. RISCV0 reader/writer 결합 kernel의 NOC0 write-back 등 기존 미검증 가설도 남아 있다.
+
+### 현재 상태
+
+- 장치: exit 137로 격리. 재부팅 확인 전 open/close 및 smoke 포함 추가 workload 금지
+- host source: endpoint/route conflict-free 4-VC coloring으로 교정
+- host build/runtime: `ttnncpp` build 성공, 배포 checksum
+  `87dbd2cc6d8f8f4770f23022ea875c8391e079ea2bb1b8bf2b986289df9a3950`
+- 교정본 device 검증: 미수행
+- 재개 gate: 사용자 재부팅 확인 → timeout 보호 32×32 add 1회 → corrected isolated correctness 1회
+- latency/NoC: correctness 성공 전 금지. fanout-2 1.472280 ms보다 느리면 NoC capture 생략
+
+## VC 교정본 재시도 결과
+
+재시작 후 32×32 add 안전 게이트는 정상 통과했다. 그러나 conflict-free VC edge coloring 교정본도
+동일한 program 생성 marker 뒤 정지했고 timeout cleanup 실패와 exit 137이 반복됐다. PCC와 close는
+없고 PID 7036 zombie가 남았다.
+
+이 결과로 고정 VC는 단독 root cause에서 제외한다. 확인된 계약 위반이므로 교정은 유지하지만,
+다음 조사는 NOC0 reader variant가 같은 결합 kernel에서 output reshard write도 NOC0으로 바꾸는 점을
+분리해야 한다. read/write NoC를 독립시키거나 Watcher로 read barrier와 output CB wait 중 어느 쪽에
+머무는지 확인하기 전에는 dual-NoC 경로를 다시 실행하지 않는다. 현재 장치는 다시 격리 상태다.
+
+SDPA TurboQuant opt-in은 두 실행에서 호출·활성화하지 않았으며 사건 범위 밖이다.
+
+## 독립 writer NoC 재시도와 정상 대조군
+
+재부팅과 add gate 성공 뒤 dual fanout-3의 output write를 reader 반대 NoC로 분리하고 Watcher 100ms를 켜서 재시도했다. endpoint `3:3:3:3:3:3`, reader NoC `9:9`, 18 reader/compute가 적용됐지만 completion 없이 exit 137이 반복됐다.
+
+- failed artifact: `/home/iris_hb4/profiler_runs/mlp_fanout3_dual_noc_3x6_separate_writer_correctness_2026_08_03_13_31_24/run.log`
+- SHA-256: `927b33cfed92bb76b6208d5b5593d5bbd9b510ed9e7357c61f52c6de581a219e`
+- process: PCC/completion/close 없음, Python PID 3802 zombie
+- Watcher: periodic check만 출력했고 명시적 error/waypoint 없음
+
+다음 재부팅과 add gate 뒤 동일 build에서 dual/fanout3/helper를 끄고 기존 balanced fanout-2를 실행했다. NOC1 endpoint `4:4:4`, 12 readers/12 compute, PCC `0.9996410623374821`, 1.487526 ms, 정상 completion/close와 exit 0을 확인했다.
+
+- success artifact: `/home/iris_hb4/profiler_runs/mlp_existing_fanout2_balanced_correctness_2026_08_03_13_41_50/run.log`
+- SHA-256: `7f4b7479714c216f2222851f331fbf129873f466b7d4d2a7a9036e43023452e9`
+
+공통 source/runtime 손상 가설은 기각한다. writer NoC 결합도 단독 root cause가 아니며, fanout-3 dual-NoC 전용 core-set/kernel instantiation과 reader completion 계약을 다음 조사 범위로 제한한다. 성공한 fanout-2 뒤 장치는 정상 close됐고 격리 상태가 아니다. TurboQuant는 사용하지 않았다.
+
+## Split-kernel-only 재현으로 좁힌 원인 범위
+
+정상 대조군 뒤 standard fanout-3의 mapping과 generic bank address helper를 보존하고, RISCV0 in1
+reader/writer source만 NOC0/NOC1 kernel handle 두 개로 나눈 opt-in을 실행했다. 즉 이전 실패의
+explicit endpoint coordinate, custom endpoint당 3-reader placement, 별도 writer NoC와 VC 변경을
+모두 제거했고 reader NoC split `9:9`만 남겼다.
+
+- run: `mlp_fanout3_split_kernel_only_correctness_2026_08_03_14_02_23`
+- timeout: `timeout --signal=INT --kill-after=15s 180s`
+- Watcher: `TT_METAL_WATCHER=100ms`
+- 마지막 정상 host marker: W1/W2 program 생성 및 split-only topology 확인
+- 누락 marker: PCC, `MLP_COMPLETED`, `DEVICE_CLOSED`
+- 종료: 약 194초 뒤 SIGKILL 상한, exit 137로 분류
+- child: Python PID 4737, PID 1 아래 `Z/<defunct>`
+- run log SHA-256: `de7cc49e6bcf6490250a5bb9f281d13e97d9c44e92dc5fe5a9b3bc5786748115`
+- Watcher SHA-256: `f1b9146f4f194c5eb931275f9d891a5a2bf599d22359913b8aa478ecb8dd713f`
+
+Watcher는 오류를 보고하지 않고 dump를 계속했으며 마지막 dump에 같은 source의 RISCV0 kernel ID 5와
+6이 공존했다. 따라서 정확한 read barrier/CB waypoint는 미확정이다. 다만 성공한 standard fanout-3
+대비 의도적으로 남긴 변화가 split kernel handle뿐이므로, 원인 신뢰도는 다음처럼 갱신한다.
+
+- 높은 신뢰도: 같은 RISCV0 processor에서 NoC 설정이 다른 두 data-movement kernel handle을 core-set별로
+  생성한 방식 또는 그에 수반되는 kernel-group/runtime contract가 hang을 유발한다.
+- 낮아진 가설: explicit endpoint address, custom core placement, VC coloring, output writer NoC 결합은
+  각각 단독 root cause가 아니다.
+- 미확정: split handle 자체의 dispatch/kernel-group 문제인지, NOC0 variant 내부의 read completion
+  문제인지는 kernel waypoint 없이는 구분할 수 없다.
+
+exit 137로 장치를 다시 격리했다. 재부팅 확인과 32×32 add gate 전에는 어떤 device workload도 실행하지
+않는다. TurboQuant는 이번 실행에서도 사용하지 않았다.

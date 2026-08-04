@@ -305,3 +305,275 @@ microbenchmark peak 86.83 GB/s의 72.48%다. 이 결과는 이번 MLP에서 stor
 다만 이는 isolated decode MLP 결과다. 64K full layer 및 전체 tokens/s 개선폭은 아직 측정하지 않았고,
 약 24 GB/s의 microbenchmark gap에는 CB/reshard/compute pipeline과 실제 matmul access pattern 차이가
 남아 있다.
+
+## 후속: 6 compute owner + 6 prefetch helper
+
+12 compute worker의 활성-core FPU utilization이 약 19%였다는 결과를 바탕으로, 12개 reader는 유지하면서
+compute/output ownership만 6개 core로 줄이는 opt-in을 구현했다.
+
+- 환경변수: `TT_METAL_MLP_DRAM_SHARDED_PREFETCH_HELPERS=1`
+- compute/output owner 6 cores + dedicated prefetch helper 6 cores
+- total DRAM readers: 12
+- NOC1 destination 배치: `4:4:4` 유지
+- owner/helper는 같은 physical DRAM shard의 앞/뒤 절반을 각각 읽음
+- owner→helper credit 및 helper→owner valid semaphore로 CB slot을 동기화
+
+### 실행 이력
+
+stale shared library를 읽은 첫 run은 기존 `readers: 6, compute workers: 12`였으므로 실험에서
+제외했다. 새 runtime을 명시한 뒤 다음 순서로 교정했다.
+
+1. 6-way shard width 43 tiles: launch 전 host `TT_FATAL`, exit 1, 정상 close
+2. helper runtime args 1→7 count 변경: launch 전 host `TT_FATAL`, exit 1, 정상 close
+3. shard width 44 tiles와 고정 7-argument shape 적용
+4. Watcher run에서 실제 `readers: 12, compute workers: 6`, endpoint `4:4:4` 확인 뒤 device abort
+
+Watcher는 core `(4,0)` BRISC가 reader kernel 종료 시 pending non-posted NoC write가 남았다고 판정했다.
+마지막 waypoint는 `NKFW, W, W, W, W`였다. Python은 abort 뒤 `D` 상태에 머물렀고 외부 180초 timeout
+cleanup도 끝나지 않아 SIGKILL, 최종 exit 137이 됐다. PCC, latency, bandwidth와 정상 device close는
+얻지 못했으므로 이 구성의 성능 결과는 없다. artifact는 아래에 보존했다.
+
+`/home/iris_hb4/profiler_runs/mlp_prefetch_helpers_correctness_2026_08_03_13_30_00/run.log`
+
+### 수정 상태와 다음 게이트
+
+helper는 credit 전에 다음 block을 prefetch하므로 각 block의 remote row write 뒤
+`noc_async_write_barrier()`를 수행하고, 그 다음 valid semaphore와 CB pop을 수행하도록 수정했다.
+patch 적용과 host `ttnncpp` build는 통과했지만 dataflow-kernel JIT와 device correctness는 미검증이다.
+exit 137 이후 장치는 격리 상태다. 사용자 재시작 확인 뒤 32×32 add가 통과해야만 isolated correctness,
+5-sample latency, warmup 1 + measured 1 NoC 순으로 진행한다. barrier가 overlap 이득을 줄일 수 있으므로
+성공 결과 전에는 6-compute 구성이 12-compute보다 빠르다고 주장하지 않는다.
+
+- patch: `/home/iris_hb4/tmp/codex-patches/20260803-141500-mlp-helper-write-barrier.patch`
+
+### 재부팅 후 barrier 경로 결과
+
+사용자가 재부팅을 확인한 뒤 32×32 add 안전 게이트, isolated correctness, profiler-free latency,
+NoC capture와 counter capture를 순서대로 완료했다. 모든 run은 정상 close와 exit 0을 통과했다.
+
+| 구성 | n | PCC | mean (ms) | median (ms) | min (ms) |
+|---|---:|---:|---:|---:|---:|
+| 12-compute balanced fanout-2 | 5 | 0.999641 | 1.472280 | 1.461554 | 1.457888 |
+| 6-compute + 6-helper, per-block barrier | 5 | 0.999641 | 1.556066 | 1.560501 | 1.523887 |
+
+6-compute 경로는 latency가 5.69% 높고 역수 처리율은 5.38% 낮다. 기존 6-reader/6-compute baseline
+1.898638 ms보다는 latency가 18.04% 낮지만, 목표 대조군인 12-compute balanced 경로를 이기지 못했다.
+
+### NoC 및 counter 비교
+
+| Projection | 12-compute kernel | 6-compute helper kernel | helper read BW | duration 변화 |
+|---|---:|---:|---:|---:|
+| W1 | 437.009 us | 462.003 us | 59.68 GB/s | +5.72% |
+| W3 | 440.292 us | 466.106 us | 59.16 GB/s | +5.86% |
+| W2 | 423.948 us | 446.362 us | 59.90 GB/s | +5.29% |
+| 합산 | 1.301249 ms | 1.374471 ms | 59.58 GB/s | +5.63% |
+
+DRAM reads는 두 구성 모두 12 source, NOC1 destination `4:4:4`, 총 81,887,232 B로 동일했다.
+helper 경로는 W1/W3 각 13,787,136 B와 W2 13,369,344 B, 합계 40,943,616 B를 owner L1로 추가
+전송하고 block마다 write barrier를 수행한다. 이에 따라 aggregate read rate가 62.93에서 59.58 GB/s로
+5.33% 낮아졌다.
+
+FPU-active core는 정확히 6개였고 active-core utilization은 W1/W3 46.91--49.29%, W2
+44.31--46.63%였다. 6-core compute가 포화된 것은 아니지만 helper relay 비용을 상쇄할 여유도 없었다.
+
+결론적으로 현재 6-helper offload는 compute bubble 제거가 아니라 추가 on-chip copy와 synchronization을
+만든다. opt-in은 분석용으로 유지하되 기본값은 기존 12-compute balanced fanout-2로 둔다.
+
+artifacts:
+
+- correctness/latency: `mlp_prefetch_helpers_barrier_correctness_2026_08_03_15_45_00`, `mlp_prefetch_helpers_barrier_latency_2026_08_03_15_50_00`
+- NoC: `mlp_prefetch_helpers_barrier_noc_2026_08_03_15_55_00`
+- counters: `mlp_prefetch_helpers_barrier_counters_2026_08_03_16_05_00`
+
+### 기존 6-compute/no-helper 재측정
+
+불필요한 새 분기를 만들지 않고 기존 `FANOUT2=0`, `PREFETCH_HELPERS=0` 경로를 같은 binary에서
+재사용했다. runtime log로 `readers: 6, compute workers: 6`을 확인했다.
+
+| 구성 | readers | compute | mean (ms) | helper 대비 |
+|---|---:|---:|---:|---:|
+| balanced direct fanout-2 | 12 | 12 | 1.472280 | -5.38% latency |
+| prefetch helper | 12 | 6 | 1.556066 | 기준 |
+| 기존 no-helper | 6 | 6 | 1.879179 | +20.76% latency |
+
+no-helper samples는 `1.938916, 1.861170, 1.852085, 1.894039, 1.849683 ms`이고 PCC는
+0.999641, median 1.861170 ms, 정상 close, exit 0이다. 기존 별도 baseline 1.898638 ms와도 1.02% 이내다.
+
+helper는 no-helper 대비 latency를 17.19% 줄이고 역수 처리율을 20.76% 높였으므로 reader fanout 이득은
+실재한다. 그러나 12-compute direct 경로보다 5.69% 느리므로 relay를 production 경로에 추가할 이유는
+없다. 현재 최선은 helper도 새 6-compute 분기도 아닌 기존 balanced 12-compute direct 경로다.
+
+artifact: `/home/iris_hb4/profiler_runs/mlp_existing_six_compute_no_helper_2026_08_03_16_20_00/run.log`
+
+## 후속: 18-compute direct fanout-3
+
+helper relay를 더 늘리는 대신 6 logical DRAM shards를 shard당 3 reader/compute가 직접 나누어 읽고
+계산하는 opt-in TT_METAL_MLP_DRAM_SHARDED_FANOUT3=1을 추가했다. fanout-2와 fanout-3는 상호
+배타적이고 helper는 fanout-3에서 금지된다. 기본 경로는 기존 balanced fanout-2다.
+
+custom BOS의 5×4 worker grid를 NOC1 endpoint group으로 분류하면 수용량은 8:8:4다. 따라서 18
+reader를 6:6:6으로 배치할 수 없으며 capacity-aware 최선은 7:7:4다. fanout-2는 동일
+알고리즘에서 기존 4:4:4를 유지한다. 성공 run의 host log는 다음을 직접 확인했다.
+
+    DRAM-sharded fanout-3 balanced endpoints: true, NOC1 endpoint groups: 7:7:4
+    DRAM-sharded fanout factor: 3, prefetch helpers: false, readers: 18, compute workers: 18
+
+첫 시도는 새 build_home_release/ttnn/_ttnncpp.so 대신 stale
+build_home_release/lib/_ttnncpp.so를 로드해 기존 fanout-2-only host fatal에서 종료됐다. 두 번째
+시도는 균등 6:6:6 limit 때문에 partner를 10개만 선택해 host fatal에서 종료됐다. 둘 다 device
+kernel launch 전 실패, DEVICE_CLOSED, exit 1이며 timeout이나 격리 사건은 아니다. runtime library를
+동일 checksum으로 배포하고 endpoint capacity를 교정한 세 번째 correctness와 후속 latency run은
+모두 정상 close와 exit 0을 통과했다.
+
+| 구성 | readers | compute | endpoint groups | n | PCC | mean (ms) | median (ms) | min (ms) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 기존 no-helper | 6 | 6 | 기존 배치 | 5 | 0.999641 | 1.879179 | 1.861170 | 1.849683 |
+| balanced fanout-2 | 12 | 12 | 4:4:4 | 5 | 0.999641 | 1.472280 | 1.461554 | 1.457888 |
+| capacity-aware fanout-3 | 18 | 18 | 7:7:4 | 5 | 0.999641 | 1.703471 | 1.687755 | 1.686237 |
+
+fanout-3 samples는 1.742215, 1.686237, 1.687755, 1.713754, 1.687396 ms다. 6-compute
+baseline보다는 latency가 9.35% 낮지만, 목표 대조군인 12-compute fanout-2보다 15.70% 높고 역수
+처리율은 13.57% 낮다.
+
+Llama 3.2 3B shape에서 fanout-3 정렬은 W1/W3 output width를 8192→8640(+5.47%), W2 output
+width를 3072→3456(+12.50%)으로 pad한다. fanout-2의 해당 width는 8448과 3072이므로 fanout-3는
+특히 W2에 새 read/compute 낭비를 만든다. 여기에 7:7:4 endpoint 비대칭과 18-way input
+multicast/output reshard 비용이 더해진다. 12→18 확대가 명확히 느려 profiler/NoC capture는 수행하지
+않았다. 현재 production 후보는 계속 balanced 12-compute fanout-2다.
+
+artifacts:
+
+- stale runtime host failure:
+  /home/iris_hb4/profiler_runs/mlp_fanout3_18_compute_correctness_2026_08_03_17_15_00/run.log
+- equal-share capacity host failure:
+  /home/iris_hb4/profiler_runs/mlp_fanout3_18_compute_correctness_2026_08_03_17_25_00/run.log
+- correctness:
+  /home/iris_hb4/profiler_runs/mlp_fanout3_18_compute_correctness_2026_08_03_17_35_00/run.log
+- 5-sample latency:
+  /home/iris_hb4/profiler_runs/mlp_fanout3_18_compute_latency_2026_08_03_17_40_00/run.log
+
+## 후속: 물리 6-endpoint × 3-reader dual-NoC
+
+기존 fanout-3의 `7:7:4`는 NOC1 logical endpoint group 분류였고 실제 6개 DRAM worker endpoint에
+3 reader씩 붙인 구성이 아니었다. 이를 분리하기 위해 분석용 opt-in
+`TT_METAL_MLP_DRAM_SHARDED_FANOUT3_DUAL_NOC=1`을 추가했다.
+
+- board: custom 20-core BOS NPU, Blackhole runtime/code architecture
+- available worker grid: 5×4, 이번 program의 reader/compute 목표: 18
+- DRAM: 3 physical banks, bank당 2 worker NoC endpoints, 총 6 endpoints
+- endpoint x→NoC: `{0:NOC0, 1:NOC1, 2:NOC1, 3:NOC1, 4:NOC0, 5:NOC0}`
+- endpoint별 reader 수: `3:3:3:3:3:3`
+- reader kernel 수: NOC0 9 cores + NOC1 9 cores
+- weight page cap: 16 KiB, W2 `in0_block_w=16`, helper 없음
+
+host는 각 endpoint reader를 서로 다른 3개 physical worker row에 놓고, endpoint x와 DRAM view를
+runtime topology API로 연결한다. dataflow kernel은 generic bank helper 대신 microbenchmark와 같은
+`bank_to_dram_offset[dram_view] + buffer_address`와 explicit endpoint NoC coordinate로 source address를
+만든다. host build와 Python runtime library 배포 checksum은
+`87dbd2cc6d8f8f4770f23022ea875c8391e079ea2bb1b8bf2b986289df9a3950`으로 일치한다.
+
+### 실행 결과
+
+첫 run은 `HF_MODEL` 누락으로 model init host assertion, 두 번째 run은 순차 greedy가 마지막 endpoint에
+서로 다른 worker row를 남기지 못해 host `TT_FATAL`로 끝났다. 둘 다 device kernel launch 전
+`DEVICE_CLOSED`와 driver close가 확인됐으므로 device timeout 사건으로 분류하지 않는다.
+
+row-balanced 배치로 교정한 세 번째 profiler-free correctness run은 host log에서 다음을 확인했다.
+
+    DRAM-sharded fanout-3 explicit endpoints: 3:3:3:3:3:3, reader NoCs: 9:9, compute workers: 18
+    DRAM-sharded fanout factor: 3, prefetch helpers: false, readers: 18, compute workers: 18
+
+W1과 W2 program 생성 로그 뒤 `MLP_PCC`, `MLP_COMPLETED`, `DEVICE_CLOSED`가 나오지 않았다. 외부
+`timeout --signal=INT --kill-after=15s 180s`의 SIGINT cleanup도 끝나지 않아 SIGKILL, exit 137로
+종료됐다. PID 11104 Python child는 종료 뒤 PID 1 아래 `Z/<defunct>`로 남았다. 따라서 correctness,
+latency 및 bandwidth 결과는 없으며 이 구성을 성공이나 성능 개선으로 분류하지 않는다.
+
+- artifact: `/home/iris_hb4/profiler_runs/mlp_fanout3_dual_noc_3x6_correctness_2026_08_03_19_10_00/run.log`
+- artifact SHA-256: `9f42c5f0cea9cdfc5d3ddd9b144db70b2cb125ae8afb0ddef332d9e00b0bd79f`
+
+### 원인 가설과 수정 상태
+
+성공한 20-core/6-endpoint DRAM microbenchmark는 같은 endpoint의 edge와 같은 `(NoC, worker-row)`
+route의 edge가 VC를 공유하지 않도록 4-VC edge coloring을 수행한다. timeout 당시 MLP 구현은 endpoint별
+고정 VC 하나를 사용해 endpoint당 3 reader가 같은 VC를 공유했다. 이는 확인된 producer/NoC 계약 차이이며
+read completion 정지의 가장 유력한 원인이다. 다만 Watcher waypoint가 없는 run이므로 root cause 확정은
+아니다.
+
+timeout 뒤 host-side에서 microbenchmark와 같은 endpoint/route conflict-free 4-VC coloring으로 수정하고
+`ttnncpp` build 및 library 배포까지 완료했다. 이 교정본은 device 미검증이다. exit 137로 현재 장치는
+격리 상태이며, 사용자 재부팅 확인 뒤 첫 workload인 timeout 보호 32×32 add가 통과하기 전에는 corrected
+dual-NoC correctness를 실행하지 않는다. correction이 통과하더라도 1-iteration correctness 뒤에만
+5-sample latency를 수행하며, 기존 fanout-2 1.472280 ms를 이기지 못하면 NoC profile은 수행하지 않는다.
+
+현재 production 후보는 계속 balanced fanout-2 12-reader/12-compute 경로다.
+
+### 재시작 후 VC 교정본 재검증
+
+사용자가 서버 재시작을 확인했다. 첫 workload인 32×32 BF16 add는 `SMOKE_VALUE 2.0`,
+`DEVICE_CLOSED`, 정상 driver close로 통과했다. 이어 profiler/Watcher 없이 VC edge-coloring 교정본의
+isolated correctness를 1회 실행했다.
+
+host log는 다시 endpoint `3:3:3:3:3:3`, reader NoC `9:9`, reader/compute 18을 확인했지만 W1/W2
+program 생성 뒤 completion이 없었다. 180초 SIGINT와 15초 cleanup 뒤 SIGKILL, exit 137이며 PCC,
+`MLP_COMPLETED`, `DEVICE_CLOSED`는 없다. Python PID 7036은 PID 1 아래 zombie로 남았다.
+
+- add artifact SHA-256: `bac03263a91383ed6ec616133902f67067af23a93c597b1c14ba095319d87b0f`
+- retry artifact: `/home/iris_hb4/profiler_runs/mlp_fanout3_dual_noc_3x6_vc_correctness_2026_08_03_20_35_00/run.log`
+- retry artifact SHA-256: `b17c0d21d2801ca6f4a4d3e47c3410900b9f89f922bb98633da4577f5b808ad4`
+
+따라서 VC 공유는 실제 계약 위반이었지만 단독 root cause가 아니다. NOC0으로 분리된 RISCV0
+reader/writer가 output reshard write까지 NOC0으로 수행하는 결합 계약을 다음 우선 가설로 둔다. 장치는
+다시 격리했고 latency 및 NoC profile은 수행하지 않았다. SDPA TurboQuant는 별도 opt-in operation이며 이번 MLP 실행에서 호출하거나 활성화하지 않았다.
+
+### 독립 writer NoC 실패와 fanout-2 재확인
+
+재부팅 후 add gate를 통과하고 dual fanout-3 reader의 반대 NoC로 output reshard write와 write barrier를 보내도록 분리했다. build와 runtime library checksum은 모두 `4a9bbbece0a8c6fed1f31c7779f647d87d875999950ab44782ca86466d5800f3`로 일치했다. Watcher 100ms와 `timeout --signal=INT --kill-after=15s 180s` 아래 1-iteration correctness를 실행했으나 W1/W2 program 생성 뒤 완료되지 않았다.
+
+- add artifact: `/home/iris_hb4/profiler_runs/post_reboot_add_smoke_2026_08_03_13_21_04/run.log`
+- add SHA-256: `97b8d4bf749be6bc4e27ecdebc0bbd996568264f9e0a629eeba4c6d39e029fa4`
+- failed artifact: `/home/iris_hb4/profiler_runs/mlp_fanout3_dual_noc_3x6_separate_writer_correctness_2026_08_03_13_31_24/run.log`
+- failed SHA-256: `927b33cfed92bb76b6208d5b5593d5bbd9b510ed9e7357c61f52c6de581a219e`
+- process result: `MLP_PCC`, `MLP_COMPLETED`, `DEVICE_CLOSED` 없음, exit 137, Python PID 3802 zombie
+- Watcher result: 주기적 device check는 지속했으나 명시적 error 또는 stable kernel waypoint는 출력하지 않음
+
+사용자가 다시 재부팅한 뒤 add gate를 통과하고 같은 build에서 기존 balanced fanout-2를 재실행했다. 환경은 `FANOUT2=1`, `FANOUT3=0`, `FANOUT3_DUAL_NOC=0`, `BALANCED_ENDPOINTS=1`, `PREFETCH_HELPERS=0`, profiler/Watcher off, 1 iteration이다.
+
+- topology: NOC1 endpoint groups `4:4:4`, readers 12, compute workers 12
+- PCC: `0.9996410623374821`
+- latency sample: `1.487526 ms` (기존 5-sample mean `1.472280 ms`와 1.04% 차이)
+- completion: `MLP_COMPLETED`, `DEVICE_CLOSED`, exit 0, 잔류 workload 없음
+- add artifact: `/home/iris_hb4/profiler_runs/post_reboot_add_smoke_2026_08_03_13_40_59/run.log`
+- add SHA-256: `860225ebe144c12caa5d20b1ecc354c9355cd18d758aade205673f00ae339b91`
+- fanout-2 artifact: `/home/iris_hb4/profiler_runs/mlp_existing_fanout2_balanced_correctness_2026_08_03_13_41_50/run.log`
+- fanout-2 SHA-256: `7f4b7479714c216f2222851f331fbf129873f466b7d4d2a7a9036e43023452e9`
+
+따라서 현재 host library, 공통 DRAM-sharded factory와 기존 fanout-2 dataflow는 정상이다. hang 범위는 fanout-3 dual-NoC 전용 core-set/kernel instantiation 또는 reader-side completion 계약으로 좁혀지며, output writer NoC 결합도 단독 root cause가 아니다.
+
+### Split-kernel-only 원인 분리 결과
+
+가장 강한 남은 가설을 분리하기 위해
+`TT_METAL_MLP_DRAM_SHARDED_FANOUT3_SPLIT_KERNEL_ONLY=1` opt-in을 추가했다. 이 구성은 성공했던
+standard fanout-3의 core mapping, NOC1 logical endpoint group `7:7:4`, generic bank address helper와
+18 reader/compute를 그대로 유지한다. explicit physical endpoint address, custom `3:3:3:3:3:3`
+placement, VC coloring, 독립 writer NoC는 사용하지 않는다. 유일한 핵심 차이는 RISCV0의 동일 in1
+reader/writer source를 서로 겹치지 않는 core set의 NOC0/NOC1 kernel handle 두 개로 생성해 reader
+NoC를 `9:9`로 나눈 것이다.
+
+Watcher 100 ms와 외부 `timeout --signal=INT --kill-after=15s 180s` 아래 1-iteration correctness는
+W1/W2 program 생성 뒤 완료되지 않았다. 약 194초까지 주기적인 Watcher dump는 계속됐지만 PCC,
+`MLP_COMPLETED`, `DEVICE_CLOSED`가 없었고 timeout cleanup 상한 뒤 Python PID 4737이 PID 1 아래
+`Z/<defunct>`로 남았다. 따라서 exit 137 timeout 실패로 분류하며 latency와 NoC profile은 수행하지
+않았다.
+
+- artifact: `/home/iris_hb4/profiler_runs/mlp_fanout3_split_kernel_only_correctness_2026_08_03_14_02_23/run.log`
+- artifact SHA-256: `de7cc49e6bcf6490250a5bb9f281d13e97d9c44e92dc5fe5a9b3bc5786748115`
+- Watcher SHA-256: `f1b9146f4f194c5eb931275f9d891a5a2bf599d22359913b8aa478ecb8dd713f`
+- build/runtime `_ttnncpp.so` SHA-256: `4c9ef08f182dc036193f438d69516d69b32fbc7c6f48187b54e4a1f01e2a9360`
+
+Watcher의 마지막 안정 dump에는 동일 source의 RISCV0 kernel ID 5와 6이 서로 다른 worker에 배치된
+상태가 반복된다. 명시적 Watcher error나 정확한 barrier waypoint는 없으므로 어느 instruction에서
+막혔는지는 아직 확정할 수 없다. 그러나 성공한 standard fanout-3에서 mapping/addressing을 유지한 채
+split handle만 추가해 같은 hang이 재현됐으므로, explicit endpoint 주소나 custom placement보다
+`같은 RISCV0 processor에 서로 다른 NoC 설정의 두 kernel handle을 생성하는 방식`을 원인 범위로
+좁힐 수 있다. 이 방식은 실패 구성으로 유지하며 production 후보는 single-NOC1 balanced fanout-2다.
+SDPA TurboQuant opt-in은 호출하거나 활성화하지 않았다. exit 137 뒤 장치는 다시 격리 상태다.

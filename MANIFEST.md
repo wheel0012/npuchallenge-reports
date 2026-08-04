@@ -1,6 +1,6 @@
 # Report manifest
 
-기준일: 2026-08-03
+기준일: 2026-08-04
 
 중앙 파일은 아래 원본의 byte-for-byte 스냅샷이다. SHA-256은 중앙 파일을 기준으로 한다.
 
@@ -11,8 +11,15 @@
 | benchmark | `benchmark-results/2026-07-31-bos-dram-saturation-20core-6-endpoint.md` | `/home/iris_hb4/tt-metal-hb4/tests/tt_metal/tt_metal/perf_microbenchmark/12_dram_20_core_6_noc_read/README.md` | `37bf584967df7d2186b6805283727aa4880eee5edd81d6777830ca62367c2975` |
 | benchmark | `benchmark-results/2026-08-02-bos-mlp-w2-block-width-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `c83b94e4c27299d340eb6a3bc36cdd3c441f26f4872a8d220e74202b7e90d060` |
 | benchmark | `benchmark-results/2026-08-03-bos-64k-six-endpoint-sdpa-mlp-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `9c415d0068d6ac97e3873f654df58bdf3c6f7f0c8d8f5a77acea6a6958891595` |
+| benchmark | `benchmark-results/2026-08-03-bos-llama32-3b-64k-full-decode-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `3544057101eae3f50f29bf5a5ab3afb5735e3a80b9eeede403137930467ccff1` |
 | benchmark | `benchmark-results/2026-08-03-bos-dram-read-write-pipeline.md` | canonical report (중앙 저장소에서 직접 작성) | `1f1174bd281279a76ad6110ba12426c8d263b7d6f0e3a00cfeedcdd11db9c407` |
-| benchmark | `benchmark-results/2026-08-03-bos-mlp-six-endpoint-fanout2-row-burst.md` | canonical report (중앙 저장소에서 직접 작성) | `835df96a8bc64d4b47a8616b569355c36d149c00e67885e464fda5d05a442328` |
+| benchmark | `benchmark-results/2026-08-03-bos-mlp-six-endpoint-fanout2-row-burst.md` | canonical report (중앙 저장소에서 직접 작성) | `b5896c0505e214fa897cc38ae67b94e74a852c3b120e0405f4a966bd7310e44d` |
+| benchmark | `benchmark-results/2026-08-03-bos-mlp-triple-buffer-stall-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `e7a93c39d18cd4a891a90fe553927b80ee11dc679ce1d8022c025c10acddd44e` |
+| benchmark | `benchmark-results/2026-08-03-bos-mlp-input-readiness-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `2d59f62139a7290fb574817166f016e38cac3c46eb80a0ebf53b6cbd12be1985` |
+| benchmark | `benchmark-results/2026-08-03-bos-mlp-fanout2-tagged-two-block.md` | canonical report (중앙 저장소에서 직접 작성) | `6a73b66112562e3b37440e2e1c1b8bb9d06a4e9f911898409c4599a72cdfa21f` |
+| benchmark | `benchmark-results/2026-08-04-bos-mlp-wait-decomposition.md` | canonical report (중앙 저장소에서 직접 작성) | `3b3c71b7bc8f53f25db67c6e14c2d43e6ec5dfc1890bef9d71e3c975564d6830` |
+| benchmark | `benchmark-results/2026-08-04-bos-mlp-reader-packed-layout-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `68a10aaa227214c0a36fcb3a9c4a74827dba673a117c0793c65e5b23e1181d28` |
+| benchmark | `benchmark-results/2026-08-04-bos-mlp-compute-block-cadence.md` | canonical report (중앙 저장소에서 직접 작성) | `c712cdfa4995564d702aaedd6af43e4627d214b027a4fc02f9a048d16b074108` |
 | investigation | `investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md` | `/home/iris_hb4/2026npu/readme_llama32_test_demo_analysis.md` | `9aa3dfa5f61cdf13847e8488c867068fc96808a8faf4669ffaf3687263825872` |
 | investigation | `investigations/2026-07-25-llama31-8b-kv-cache.md` | `/home/iris_hb4/2026npu/readme_llama32_analysis.md` | `b9f4ab7f6c3bbb77ef323c7bd71bbbb242df0b72c2fcb0691d84fb2ae7991c3c` |
 | investigation | `investigations/2026-07-26-ttnn-visualizer-bos-blackhole-npe.md` | `/home/iris_hb4/TTNN_VISUALIZER_BOS_BLACKHOLE_NPE_REPORT_KO.md` | `afc2148ba76fa5bda226d8f81de20032bd291cf203d3b9bd16d2e56587ed8d8c` |
@@ -23,8 +30,9 @@
 | incident | `incidents/2026-08-01-bos-mlp-noc-profile-fw-init-failure.md` | canonical report (중앙 저장소에서 직접 작성) | `f8f97df2e72b9d0672a0271f107e993f4be6e369f0ff4bd9463c255885a7366b` |
 | incident | `incidents/2026-08-02-bos-sdpa-reduce-helper-deadlock.md` | canonical report (중앙 저장소에서 직접 작성) | `3a14bdd61b1a57d18621d0bd40fc74a597440049451f272cb4ff449110d7482c` |
 | incident | `incidents/2026-08-02-bos-llama32-dram-sharded-prefill-validation-failure.md` | canonical report (중앙 저장소에서 직접 작성) | `176564a08e0011cf8206ca6d8bf66fb3b6b72c2d6a15c2b7df395c64b1aaa5fa` |
-| incident | `incidents/2026-08-03-bos-mlp-dual-noc-reader-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `a2504adad42c44dcb0cc16556678cbfb47a3c957b3450dc9a9cda23870e82795` |
+| incident | `incidents/2026-08-03-bos-mlp-dual-noc-reader-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `6a6cf543d6d3ccc64a20e049256c6bdad8c3d240cd61271bf3a49f0ac1f769d5` |
+| incident | `incidents/2026-08-03-bos-mlp-prefetch-helper-write-barrier.md` | canonical report (중앙 저장소에서 직접 작성) | `2927e0d6f06fdc530869597c779767d3a1e788d8c4a29ca6bde8a10064c14a62` |
 | handoff | `handoffs/2026-07-21-qwen25-3b-32k-profiling.md` | `/home/iris_hb4/QWEN_AND_PROFILER_README.md` | `b7ccdfc275c11a2d554ae55bb8afdbf725316d999f404adf49a5b0adb36a2a4a` |
 | guide | `guides/gemm-benchmark-measurement.md` | `/home/iris_hb4/GEMM_BENCHMARK_GUIDE_KO.md` | `2c1c7858deb47870bd8b90b97484095fd4cbade1c2d09d37f043e0eeb1dd2643` |
 | guide | `guides/tt-metal-venv-path.md` | `/home/iris_hb4/TT_METAL_VENV_PATH_GUIDE_KO.md` | `da9bd20162b7d626ff2b83a5659eba1b6c65c1f11861b7cddc2b2d96541d06c9` |
-| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `5df24d697058168efb6157839f8e8b43945fb242f07afbc164575527c312be4c` |
+| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `ac4411aee6ee5a91e8e397e491f08abb2ed8f032bbc486437fd60ef1231913a4` |

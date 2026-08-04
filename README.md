@@ -24,8 +24,15 @@
 - [BOS 20-core, 6-endpoint DRAM saturation benchmark](benchmark-results/2026-07-31-bos-dram-saturation-20core-6-endpoint.md)
 - [BOS MLP DRAM-sharded 및 W2 block-width A/B](benchmark-results/2026-08-02-bos-mlp-w2-block-width-ab.md)
 - [BOS Llama 3.2 3B 64K SDPA·MLP 6-endpoint A/B](benchmark-results/2026-08-03-bos-64k-six-endpoint-sdpa-mlp-ab.md)
+- [BOS Llama 3.2 3B 64K full-model decode A/B](benchmark-results/2026-08-03-bos-llama32-3b-64k-full-decode-ab.md)
 - [BOS 3-bank read/write split-NoC pipeline benchmark](benchmark-results/2026-08-03-bos-dram-read-write-pipeline.md)
 - [BOS MLP 6-endpoint fanout-2 및 row-burst](benchmark-results/2026-08-03-bos-mlp-six-endpoint-fanout2-row-burst.md)
+- [BOS MLP triple-buffer stall profile](benchmark-results/2026-08-03-bos-mlp-triple-buffer-stall-profile.md)
+- [BOS MLP activation/weight readiness profile](benchmark-results/2026-08-03-bos-mlp-input-readiness-profile.md)
+- [BOS MLP fanout-2 tagged two-block A/B](benchmark-results/2026-08-03-bos-mlp-fanout2-tagged-two-block.md)
+- [BOS MLP wait decomposition](benchmark-results/2026-08-04-bos-mlp-wait-decomposition.md)
+- [BOS MLP reader-packed weight layout A/B](benchmark-results/2026-08-04-bos-mlp-reader-packed-layout-ab.md)
+- [BOS MLP compute block cadence](benchmark-results/2026-08-04-bos-mlp-compute-block-cadence.md)
 
 ### Investigations
 
@@ -43,6 +50,7 @@
 - [BOS SDPA reduce-only helper deadlock 및 timeout SIGKILL](incidents/2026-08-02-bos-sdpa-reduce-helper-deadlock.md)
 - [BOS Llama 3.2 3B DRAM-sharded MLP prefill validation failure](incidents/2026-08-02-bos-llama32-dram-sharded-prefill-validation-failure.md)
 - [BOS MLP dual-NoC reader 첫 실제 실행 timeout](incidents/2026-08-03-bos-mlp-dual-noc-reader-timeout.md)
+- [BOS MLP prefetch-helper NoC write-barrier Watcher abort](incidents/2026-08-03-bos-mlp-prefetch-helper-write-barrier.md)
 
 ### Handoffs, guides, and indexes
 
