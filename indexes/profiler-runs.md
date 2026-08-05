@@ -51,6 +51,13 @@ Performance and synchronization experiments are stored as separate runs; failed 
 | `llama32_3b_64k_local_swiglu_ab_2026_08_04_10_00_00` | operationally complete, experiment invalid | intended optimized full decode A/B | SDPA 6-endpoint opt-ins omitted; 6.061334/6.071251 tok/s excluded; both normal close |
 | `llama32_3b_64k_local_swiglu_ab_corrected_2026_08_04_11_00_00` | success, profiler-free A/B | exact SDPA 6-endpoint K256 + MLP fanout-2 baseline/fused | baseline 7.643404 vs fused 7.666719 tok/s, +0.3050%; dual-NoC marker confirmed; both normal close |
 | `llama32_3b_64k_local_swiglu_logits_ab_2026_08_04_10_30_00` | success, profiler-free correctness A/B | fixed token/position/zero KV full-model logits | PCC 0.999288; same top-1 and 5/5 top-5 overlap; not bitwise exact; both normal close |
+| `mlp_fanout2_tagged_balanced_noc_idle_2026_08_05_04_00_00` | failed, incomplete NoC capture, exit 124 | balanced fanout-2 global NoC gap 확인 | MLP PCC 0.999641 및 completion 뒤 profiler event type 0 fatal; no close/raw NoC/ops CSV; PID 4339 D-state; marker 근사상 projection 내부 pending-empty 0% |
+| `mlp_tagged_depth2_12_compute_2026_08_05_04_23_00` | success, profiler-free | 12-reader tagged depth-2 control | 20회 mean/median 1.467559/1.468924 ms; PCC 0.999641; normal close |
+| `mlp_tagged_depth1_12_compute_2026_08_05_04_23_26` | success, profiler-free | 최대 pending block 24→12 admission 제한 | 20회 mean/median 1.493915/1.495990 ms; mean +1.796%; PCC 0.999641; normal close |
+| `mlp_dram_sharded_6_compute_2026_08_05_04_24_00` | failed, timeout/SIGKILL, exit 137 | fanout off 6-reader/6-compute 20회 대조 | mapping confirmed; no PCC/samples/completion/close; no child remained; device quarantined |
+| `mlp_fanout2_lane1_stagger256_2026_08_05_04_46_01` | success, profiler-free | tagged fanout-2 lane-1 최초 issue 256-cycle stagger | block16/16KiB 20회 mean/median 1.473408/1.474435 ms; PCC 0.999641; normal close |
+| `mlp_fanout2_no_stagger_control_2026_08_05_04_46_24` | success, profiler-free | 같은 설정의 no-stagger control | 20회 mean/median 1.440942/1.436232 ms; stagger가 mean +2.253%; normal close |
+| `mlp_fanout2_endpoint_local_2026_08_05_05_09_39` | failed, timeout/SIGKILL, exit 137 | physical endpoints x=0..5 × 2 nearest readers, native NoC 6:6 correctness | mapping/program creation confirmed; no PCC/completion/close; PID 5920 zombie; device quarantined |
 
 Visualizer-compatible performance artifacts are under each successful Tracy run's `perf_report_visualize/` directory.
 

@@ -33,6 +33,9 @@
 - [BOS MLP wait decomposition](benchmark-results/2026-08-04-bos-mlp-wait-decomposition.md)
 - [BOS MLP reader-packed weight layout A/B](benchmark-results/2026-08-04-bos-mlp-reader-packed-layout-ab.md)
 - [BOS MLP compute block cadence](benchmark-results/2026-08-04-bos-mlp-compute-block-cadence.md)
+- [BOS MLP DRAM admission depth-1 및 6-compute 비교](benchmark-results/2026-08-05-bos-mlp-admission-depth1-vs-6-compute.md)
+- [BOS MLP W1/W3 block-width sweep](benchmark-results/2026-08-05-bos-mlp-w1-w3-block-width-sweep.md)
+- [BOS MLP DRAM-nearest 12-core placement A/B](benchmark-results/2026-08-05-bos-mlp-dram-nearest-core-placement-ab.md)
 
 ### Investigations
 
@@ -43,6 +46,8 @@
 - [BOS 64K vanilla SDPA와 DRAM saturation 격차](investigations/2026-08-01-vanilla-sdpa-vs-dram-saturation-gap.md)
 - [BOS Flash Decode 4 idle-core helper 설계 조사](investigations/2026-08-01-sdpa-four-helper-buffering-design.md)
 - [BOS Llama 3.2 3B MLP 개선 조사](investigations/2026-08-04-bos-mlp-optimization-investigation.md)
+- [BOS MLP vanilla에서 12-compute 확정까지](investigations/2026-08-04-bos-mlp-vanilla-to-12-compute.md)
+- [BOS Llama 3.2 3B transformer stable optimization baseline](investigations/2026-08-05-bos-transformer-stable-optimization-baseline.md)
 
 ### Incidents
 
@@ -52,6 +57,9 @@
 - [BOS Llama 3.2 3B DRAM-sharded MLP prefill validation failure](incidents/2026-08-02-bos-llama32-dram-sharded-prefill-validation-failure.md)
 - [BOS MLP dual-NoC reader 첫 실제 실행 timeout](incidents/2026-08-03-bos-mlp-dual-noc-reader-timeout.md)
 - [BOS MLP prefetch-helper NoC write-barrier Watcher abort](incidents/2026-08-03-bos-mlp-prefetch-helper-write-barrier.md)
+- [BOS MLP NoC profiler invalid-transfer abort 및 timeout](incidents/2026-08-05-bos-mlp-noc-profiler-invalid-transfer-timeout.md)
+- [BOS MLP 6-compute 20-iteration timeout](incidents/2026-08-05-bos-mlp-6-compute-20-iteration-timeout.md)
+- [BOS MLP endpoint-local fanout-2 timeout](incidents/2026-08-05-bos-mlp-endpoint-local-fanout2-timeout.md)
 
 ### Handoffs, guides, and indexes
 

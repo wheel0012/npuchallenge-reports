@@ -127,3 +127,157 @@ Gate/up activation을 별도 L1 op로 왕복하지 않고 core-local `c7`에 W3 
 3. 6 DRAM shards × 88 tiles, 12 compute readers × 44 raw tiles, worker당 22 output tiles로 맞췄다.
 4. `silu_tile_init`/`silu_tile` JIT 선언 누락에 `compute_kernel_api.h`를 추가했다.
 5. Host build, runtime install, Python import는 성공했다.
+
+## 2026-08-05 tagged NoC pending-gap 계측
+
+재부팅 뒤 add gate와 profiler-free isolated MLP는 정상 통과했다. 동일 12-reader/12-compute,
+fanout-2, tagged two-block, NOC1 destination 4:4:4 구성의 NoC capture는 MLP completion 뒤 profiler
+후처리에서 `Invalid NoC transfer type on device: 0`으로 abort했다. 외부 timeout exit 124와 D-state
+child가 발생했으므로 raw NoC capture는 실패이며 장치를 격리했다.
+
+불완전한 device CSV에서 `MLP_IN1_ISSUED`→`MLP_IN1_DRAM_DONE` 구간만 추출했다. 이는 실제 link
+utilization이 아닌 outstanding DRAM read 근사치다.
+
+| projection | 평균 pending | 최대 pending | pending ≥12 시간 | 내부 pending-empty 시간 |
+|---|---:|---:|---:|---:|
+| W1 | 18.43 | 24 | 94.56% | 0% |
+| W3 | 18.52 | 24 | 95.07% | 0% |
+| W2 | 16.37 | 22 | 94.27% | 0% |
+
+Projection 경계 gap은 W1→W3 15.185 µs, W3→W2 70.122 µs다. 합계 85.307 µs는 measured
+1.507990 ms의 5.66%다. 따라서 약 67% consumer input wait는 global NoC-empty 시간이 아니다.
+현재 reader는 projection 내부에서 이미 계속 요청을 outstanding으로 유지한다.
+
+현재 fused gate/up output은 16번째 K block의 `last_out`에서만 publish된다. 출력도 12 workers ×
+22 tiles의 physical 264-tile 배치이고, W2 input은 16×16의 256-tile 배치다. 현행 4.042 µs L1
+reshard가 이 재배치를 담당한다. 12 producer→8 W2 consumer pipeline에는 22→16 reblocking과 W2
+activation K-block multicast가 새로 필요하며 W2 reader 수는 12에서 8로 감소한다.
+
+결론: pipeline은 FlashAttention처럼 DRAM byte를 크게 제거하지 않는다. phase gap 일부를 숨기는
+상한은 약 5.7%이며 실제 이득은 그보다 작을 가능성이 높다. 우선순위는 pipeline 구현보다 DRAM
+request service latency, endpoint별 queueing, W2 phase 시작 gap의 원인 분해다.
+
+## 2026-08-05 DRAM admission depth-1 및 6-compute 대조
+
+Tagged fanout-2의 reader당 pending depth를 2에서 1로 줄이는 opt-in을 구현했다. 최대 outstanding
+block은 24에서 12로 감소한다. 동일 isolated MLP 20회에서 depth-2 mean/median은
+1.467559/1.468924 ms, depth-1은 1.493915/1.495990 ms였다.
+
+| variant | readers/compute | mean ms | depth-2 대비 |
+|---|---:|---:|---:|
+| tagged depth-2 | 12/12 | 1.467559 | 기준 |
+| tagged depth-1 | 12/12 | 1.493915 | +1.796% |
+| fanout off | 6/6 | 측정 불가 | exit 137 |
+
+Depth-1 제한은 overlap을 줄여 성능을 악화시켰다. 12-reader request count 자체가 주 병목이라는 가설은
+지지되지 않는다. 6-compute 20회는 90초 timeout과 exit 137로 실패해 장치를 격리했다. 현행 선택은
+12-compute tagged depth-2 유지다. 다음 후보는 global depth 감소가 아니라 endpoint별 작은 phase
+stagger이며, 재부팅 뒤 1 measured call부터 검증해야 한다.
+
+## 2026-08-05 endpoint lane start stagger 결과
+
+재부팅과 add gate 뒤 fanout-2 lane 1의 최초 request만 256 cycles 지연했다. 12 readers/compute,
+tagged depth-2, NOC1 destination 4:4:4는 바꾸지 않았다.
+
+W2 block16과 16 KiB cap을 log로 확인한 20회 A/B에서 stagger/no-stagger mean은
+1.473408/1.440942 ms, median은 1.474435/1.436232 ms였다. Stagger가 mean 2.253%, median 2.660%
+느리다. PCC는 양쪽 모두 0.9996410623이고 정상 close/exit 0이다.
+
+### 관측 사실
+
+- Reader 수 12→6은 이전 run에서 completion 없이 exit 137이었다.
+- Pending depth 2→1은 mean 1.796% 악화했다.
+- Lane-1 start stagger 256 cycles는 mean 2.253% 악화했다.
+
+### 결론
+
+Request 개수나 endpoint 동시 시작을 줄이는 admission 제어는 현재 병목을 개선하지 않는다. Reader가
+projection 내부에서 pending request를 유지한다는 기존 marker 관측과도 일치한다. 기본 구성은
+12-compute tagged depth-2, no stagger다. 다음 조사는 reader admission보다 compute/consumer가 이미
+도착한 block을 소비하는 cadence와 projection 경계 W3→W2 70.122 µs gap에 집중한다.
+
+## 2026-08-05 physical endpoint-local fanout-2
+
+Microbenchmark의 native six-endpoint mapping을 12-compute MLP opt-in으로 이식했다. Physical endpoint
+x=0..5에 reader 두 개씩 배치하고 x={0,4,5}는 NOC0, x={1,2,3}은 NOC1을 사용했다. Host log에서
+endpoint `2:2:2:2:2:2`, reader NoC `6:6`, compute 12, conflict-free VC를 확인했다.
+
+Profiler/Watcher 없는 첫 correctness 1회는 W1/W3와 W2 mapping log 뒤 completion 없이 정지했다.
+90초 SIGINT와 15초 cleanup 상한 뒤 exit 137이었다. PCC와 device close는 없다. 장치를 격리했다.
+
+따라서 physical proximity 자체의 성능은 측정하지 못했다. 실패 signature는 기존 fanout-3 explicit
+six-endpoint split-kernel 경로와 같다. Endpoint별 reader 수와 VC를 교정해도 정지했으므로 다음 원인
+후보는 split NOC0/NOC1 reader kernel의 CB producer/consumer 또는 output writer 계약이다. 이 opt-in은
+재실행하지 않는다. 기본 선택은 NOC1 4:4:4, 12-compute tagged depth-2다.
+
+## 2026-08-05 endpoint-local single-kernel 반증 실험
+
+Split RISCV0 kernel handle을 제거하고 단일 RISCV0 kernel에서 endpoint x로 reader NoC을 runtime
+선택했다. Dynamic endpoint address, `noc_async_read`, TRID 설정과 barrier 모두 같은 runtime NoC을
+사용하고 output writer는 반대 NoC을 사용했다. Host build와 runtime install은 성공했다.
+
+재부팅 뒤 add gate를 통과한 상태에서 profiler/Watcher 없는 isolated MLP correctness 1회를 실행했다.
+W1/W3와 W2 모두 endpoint `2:2:2:2:2:2`, reader NoC `6:6`, compute 12, single-kernel log를 확인했다.
+결과는 PCC/completion/close 없는 timeout, exit 137이다. 장치는 다시 격리했다.
+
+### 해석
+
+- split NOC0/NOC1 kernel handle은 hang의 필요조건이 아니다.
+- Reader 수 12, fanout-2 tagged depth-2, VC coloring만으로도 설명되지 않는다.
+- 실패 경로의 남은 고유 요소는 physical explicit-endpoint address와 runtime NoC 전환, 반대-NoC writer다.
+- 정확한 wait 지점은 미측정이다. Writer barrier, output reshard destination 및 CB ownership 계약을
+  baseline NOC1 4:4:4와 host-side로 비교해야 한다.
+
+성능은 측정하지 못했다. 안전한 기본 선택은 계속 NOC1 4:4:4, 12-compute tagged depth-2다.
+Endpoint-local flag는 다음 재부팅 뒤에도 계약 수정과 별도 correctness 계획 전에는 실행하지 않는다.
+
+## 2026-08-05 microbenchmark 대비 구조 제약
+
+두 번째 재부팅 뒤 add gate는 정상 통과했다. 이후 device workload 없이 source 계약만 비교했다.
+
+### 확인된 사실
+
+- 정상 six-endpoint microbenchmark는 NOC0 reader를 RISCV0 기본 NoC, NOC1 reader를 RISCV1 기본 NoC에
+  배치한다. 두 processor의 core set은 분리된다.
+- MLP matmul은 RISCV1이 in0 activation multicast를 맡고 RISCV0이 weight reader와 output writer를
+  함께 맡는다.
+- MLP에서 같은 RISCV0의 core set을 NOC0/NOC1 kernel handle로 나눈 경로와 단일 RISCV0에서 runtime
+  NoC을 바꾼 경로가 모두 completion 없이 멈췄다.
+- Explicit endpoint의 `view_for_endpoint_x`와 address 식은 microbenchmark와 같다.
+- Writer runtime-arg index와 output reshard vector layout은 baseline과 같다.
+- 선택된 x=4 worker를 포함하도록 program bounding box와 CB 범위가 확장된다.
+
+### 결론
+
+현재 증거는 DRAM view 주소, x=4 CB 누락, split handle 하나보다 data-movement processor와 NoC 역할
+결합을 가리킨다. Microbenchmark의 dual-NoC 방식을 fused matmul의 RISCV0 weight-reader에 그대로
+이식할 수 없다고 보는 것이 안전하다.
+
+현행 선택은 NOC1 4:4:4, 12-compute tagged depth-2다. Six endpoint를 다시 쓰려면 RISCV1 in0 역할을
+재배치하거나 dedicated producer core가 읽고 compute core에 전달하는 새 handshake가 필요하다. 이는
+단순 reader placement가 아니라 dataflow 재설계로 분류한다.
+
+## 2026-08-05 fixed writer와 ordering 분해 결과
+
+Endpoint-local writer를 GEMM처럼 고정 kernel NoC으로 바꾸자 동일 explicit reader 구성이 device
+completion과 close까지 진행했다. PCC는 `0.028334455265917317`로 실패했다.
+
+### 관측
+
+- Opposite-NoC writer 제거 전: completion 없는 exit 137.
+- Opposite-NoC writer 제거 후: clean close, exit 1, PCC 실패.
+- Reader 배열은 endpoint x 순서라 DRAM view가 `0,0,3,3,4,4,5,5,1,1,2,2`였다.
+- 이를 `0,0,1,1,...,5,5`로 단순 재정렬하자 다시 completion 없는 exit 137이 발생했다.
+
+### 결론
+
+Opposite-NoC output reshard writer는 hang 원인으로 확인됐다. 그러나 fixed writer만으로 correctness는
+복구되지 않는다. `compute_worker_cores_ordered`는 다음 세 의미를 동시에 가진다.
+
+1. Physical compute/reader placement
+2. Weight shard와 output-column partition 순서
+3. Output reshard destination/ownership 진행 순서
+
+따라서 endpoint locality를 위해 이 배열을 재정렬하면 weight/output correctness 또는 reshard 진행
+계약 중 하나가 깨진다. 다음 설계는 physical core order를 유지한 채 별도의 logical partition index와
+writer ownership permutation을 전달해야 한다. 현재 장치는 exit 137로 다시 격리 상태다.
