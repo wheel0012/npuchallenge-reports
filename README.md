@@ -36,9 +36,14 @@
 - [BOS MLP DRAM admission depth-1 및 6-compute 비교](benchmark-results/2026-08-05-bos-mlp-admission-depth1-vs-6-compute.md)
 - [BOS MLP W1/W3 block-width sweep](benchmark-results/2026-08-05-bos-mlp-w1-w3-block-width-sweep.md)
 - [BOS MLP DRAM-nearest 12-core placement A/B](benchmark-results/2026-08-05-bos-mlp-dram-nearest-core-placement-ab.md)
+- [BOS SDPA 12-core grouped concat A/B](benchmark-results/2026-08-05-bos-sdpa-grouped-concat-two-heads-per-core.md)
+- [BOS SDPA grouped concat exact Wo-input A/B](benchmark-results/2026-08-05-bos-sdpa-grouped-concat-exact-wo-input-ab.md)
+- [BOS SDPA three-way 12-core A/B](benchmark-results/2026-08-05-bos-sdpa-three-way-12-core-ab.md)
+- [BOS Llama 3.2 3B 64K best stable vs vanilla toks/s](benchmark-results/2026-08-05-bos-llama32-3b-64k-best-vs-vanilla-toks.md)
 
 ### Investigations
 
+- [BOS SDPA grouped concat full-model exact gate](investigations/2026-08-05-bos-sdpa-grouped-concat-full-model-exact-gate.md)
 - [BOS Llama 3.2 test-demo KV-cache 분석](investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md)
 - [Llama 3.1 8B KV-cache 분석](investigations/2026-07-25-llama31-8b-kv-cache.md)
 - [TTNN Visualizer BOS Blackhole NPE 분석](investigations/2026-07-26-ttnn-visualizer-bos-blackhole-npe.md)

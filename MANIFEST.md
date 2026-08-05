@@ -23,6 +23,11 @@
 | benchmark | `benchmark-results/2026-08-05-bos-mlp-admission-depth1-vs-6-compute.md` | canonical report (중앙 저장소에서 직접 작성) | `7bee7d3dbb3dc3e95bedd4035cbbebca71b92fa9898d9fa08952c65cfb58058c` |
 | benchmark | `benchmark-results/2026-08-05-bos-mlp-w1-w3-block-width-sweep.md` | canonical report (중앙 저장소에서 직접 작성) | `e09d3b366494dab8b5a03cbecae7c1e0bf563563e66019e7398a8cf4c89a8894` |
 | benchmark | `benchmark-results/2026-08-05-bos-mlp-dram-nearest-core-placement-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `8abc1c55c175ddf9d3a59c9531bb21388892f57f74b5cb1dd1c6f94d0933887b` |
+| benchmark | `benchmark-results/2026-08-05-bos-sdpa-grouped-concat-two-heads-per-core.md` | canonical report (중앙 저장소에서 직접 작성) | `778247d840f3e37b34525a2af70a7c5ac19d4d61125a11c9f822698a17490257` |
+| benchmark | `benchmark-results/2026-08-05-bos-sdpa-grouped-concat-exact-wo-input-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `571ca0b9ec516134f97aff1aac9a8ca30a7190a115b7984203295777736c9e61` |
+| benchmark | `benchmark-results/2026-08-05-bos-sdpa-three-way-12-core-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `54910601bbbd83c6603b1018985c8e8ca5e0c61b7fef6d999233fb1a09abc698` |
+| benchmark | `benchmark-results/2026-08-05-bos-llama32-3b-64k-best-vs-vanilla-toks.md` | canonical report (중앙 저장소에서 직접 작성) | `c8ec1afd3c16327efe18f98ad655ead8ffc14aa15e62763b69fcd919d0fdd868` |
+| investigation | `investigations/2026-08-05-bos-sdpa-grouped-concat-full-model-exact-gate.md` | canonical report (중앙 저장소에서 직접 작성) | `611e5131fc59ace516bc834ec266bad68e9b09568ec9bd6060e722b454d130ca` |
 | investigation | `investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md` | `/home/iris_hb4/2026npu/readme_llama32_test_demo_analysis.md` | `9aa3dfa5f61cdf13847e8488c867068fc96808a8faf4669ffaf3687263825872` |
 | investigation | `investigations/2026-07-25-llama31-8b-kv-cache.md` | `/home/iris_hb4/2026npu/readme_llama32_analysis.md` | `b9f4ab7f6c3bbb77ef323c7bd71bbbb242df0b72c2fcb0691d84fb2ae7991c3c` |
 | investigation | `investigations/2026-07-26-ttnn-visualizer-bos-blackhole-npe.md` | `/home/iris_hb4/TTNN_VISUALIZER_BOS_BLACKHOLE_NPE_REPORT_KO.md` | `afc2148ba76fa5bda226d8f81de20032bd291cf203d3b9bd16d2e56587ed8d8c` |
