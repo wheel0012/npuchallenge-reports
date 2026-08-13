@@ -1,6 +1,6 @@
 # Report manifest
 
-기준일: 2026-08-05
+기준일: 2026-08-12
 
 중앙 파일은 아래 원본의 byte-for-byte 스냅샷이다. SHA-256은 중앙 파일을 기준으로 한다.
 
@@ -27,6 +27,19 @@
 | benchmark | `benchmark-results/2026-08-05-bos-sdpa-grouped-concat-exact-wo-input-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `571ca0b9ec516134f97aff1aac9a8ca30a7190a115b7984203295777736c9e61` |
 | benchmark | `benchmark-results/2026-08-05-bos-sdpa-three-way-12-core-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `54910601bbbd83c6603b1018985c8e8ca5e0c61b7fef6d999233fb1a09abc698` |
 | benchmark | `benchmark-results/2026-08-05-bos-llama32-3b-64k-best-vs-vanilla-toks.md` | canonical report (중앙 저장소에서 직접 작성) | `c8ec1afd3c16327efe18f98ad655ead8ffc14aa15e62763b69fcd919d0fdd868` |
+| benchmark | `benchmark-results/2026-08-09-bos-sdpa-route-overlap-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `2cc7c5013f7f12cd5e856e7eecacc1e249331a33b7326f9c2a4d51ff7c78380a` |
+| benchmark | `benchmark-results/2026-08-09-bos-vanilla-sdpa-kchunk-phase-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `12975239d517ab82584023482f0f5aa76e6acf7b75d66b8012e5f6630efd1593` |
+| benchmark | `benchmark-results/2026-08-09-bos-llama32-3b-64k-stable-layer0-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `0ec98ca9437d90190d8c70674f73fbf6a8d2dc2ecd0f6006c11aec759142046e` |
+| benchmark | `benchmark-results/2026-08-09-bos-attention-qkv-wo-dram-sharded-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `018517504129c008840b04c45d6f9fbb467dbafee0bd1c4f1b5612162d306d00` |
+| benchmark | `benchmark-results/2026-08-09-bos-sdpa-read-barrier-threshold-sweep.md` | canonical report (중앙 저장소에서 직접 작성) | `7debc132227a79278c6d7e7211e6c021dc8c7fa71055badeb80d52117f17fabb` |
+| benchmark | `benchmark-results/2026-08-09-bos-llama32-3b-64k-optimization-waterfall.md` | canonical report (중앙 저장소에서 직접 작성) | `83cde94bc0dc2df106d35a688625b9d75f1521203e8efaa74d9446dd7caf6860` |
+| benchmark | `benchmark-results/2026-08-09-bos-llama32-3b-64k-five-run-layer-waterfall.md` | canonical report (중앙 저장소에서 직접 작성) | `3199379aa81984406e8629eaf7a309e8397f7eba657458b4c6c636edf43d82e5` |
+| benchmark | `benchmark-results/2026-08-10-bos-sdpa-inner-k-streaming-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `5479f52c31a1dbbf8bdc744dfa0fdd04b5544052662e29c1835c51efb0ef9305` |
+| benchmark | `benchmark-results/2026-08-10-bos-sdpa-kchunk-fixed-cost-decomposition.md` | canonical report (중앙 저장소에서 직접 작성) | `e4242f3d2856e62b7af34c0edf58615c2dcd212e7c3def21c4cb273d82ffb922` |
+| benchmark | `benchmark-results/2026-08-11-bos-sdpa-3ep-vs-6ep-metrics.md` | canonical report (중앙 저장소에서 직접 작성) | `b58c4a24761c487ad8f266415a7115710443f980ad56ccf9616d666739d89db5` |
+| benchmark | `benchmark-results/2026-08-12-bos-llama32-3b-56k-bf16-layer0-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `b18cabe8e2473d4748a28d8673afd5828e0d08e33e4c73a835e12fb7406fbaa1` |
+| investigation | `investigations/2026-08-11-bos-sdpa-optimization-effect-reasoning.md` | canonical report (중앙 저장소에서 직접 작성) | `6e61c0f3b16f0955e44e75a1052f131c980ff80c06f95e1a7ed72608a0907ea5` |
+| investigation | `investigations/2026-08-08-bos-sdpa-mlp-core-role-mapping.md` | canonical report (중앙 저장소에서 직접 작성) | `610656eacf2d2e64224c5933ab45f1df020cd574940ffb71d08a4a379ee1512d` |
 | investigation | `investigations/2026-08-05-bos-sdpa-grouped-concat-full-model-exact-gate.md` | canonical report (중앙 저장소에서 직접 작성) | `611e5131fc59ace516bc834ec266bad68e9b09568ec9bd6060e722b454d130ca` |
 | investigation | `investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md` | `/home/iris_hb4/2026npu/readme_llama32_test_demo_analysis.md` | `9aa3dfa5f61cdf13847e8488c867068fc96808a8faf4669ffaf3687263825872` |
 | investigation | `investigations/2026-07-25-llama31-8b-kv-cache.md` | `/home/iris_hb4/2026npu/readme_llama32_analysis.md` | `b9f4ab7f6c3bbb77ef323c7bd71bbbb242df0b72c2fcb0691d84fb2ae7991c3c` |
@@ -49,4 +62,4 @@
 | handoff | `handoffs/2026-07-21-qwen25-3b-32k-profiling.md` | `/home/iris_hb4/QWEN_AND_PROFILER_README.md` | `b7ccdfc275c11a2d554ae55bb8afdbf725316d999f404adf49a5b0adb36a2a4a` |
 | guide | `guides/gemm-benchmark-measurement.md` | `/home/iris_hb4/GEMM_BENCHMARK_GUIDE_KO.md` | `2c1c7858deb47870bd8b90b97484095fd4cbade1c2d09d37f043e0eeb1dd2643` |
 | guide | `guides/tt-metal-venv-path.md` | `/home/iris_hb4/TT_METAL_VENV_PATH_GUIDE_KO.md` | `da9bd20162b7d626ff2b83a5659eba1b6c65c1f11861b7cddc2b2d96541d06c9` |
-| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `2143330952152202302d3b667608f2968531d1f3aeb567e9aa205137e98911c6` |
+| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `3670ba1042d87f6b4bebdb5c17087d202492079c5628082c1c4e198e4b04225b` |

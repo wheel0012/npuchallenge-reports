@@ -40,9 +40,22 @@
 - [BOS SDPA grouped concat exact Wo-input A/B](benchmark-results/2026-08-05-bos-sdpa-grouped-concat-exact-wo-input-ab.md)
 - [BOS SDPA three-way 12-core A/B](benchmark-results/2026-08-05-bos-sdpa-three-way-12-core-ab.md)
 - [BOS Llama 3.2 3B 64K best stable vs vanilla toks/s](benchmark-results/2026-08-05-bos-llama32-3b-64k-best-vs-vanilla-toks.md)
+- [BOS SDPA directed-link route-overlap A/B](benchmark-results/2026-08-09-bos-sdpa-route-overlap-ab.md)
+- [BOS vanilla SDPA K-chunk 128/256/512 phase A/B](benchmark-results/2026-08-09-bos-vanilla-sdpa-kchunk-phase-ab.md)
+- [BOS Llama 3.2 3B 64K stable layer-0 profile](benchmark-results/2026-08-09-bos-llama32-3b-64k-stable-layer0-profile.md)
+- [BOS attention QKV·Wo DRAM-sharded A/B](benchmark-results/2026-08-09-bos-attention-qkv-wo-dram-sharded-ab.md)
+- [BOS SDPA K256 read-barrier threshold sweep](benchmark-results/2026-08-09-bos-sdpa-read-barrier-threshold-sweep.md)
+- [BOS Llama 3.2 3B 64K optimization waterfall](benchmark-results/2026-08-09-bos-llama32-3b-64k-optimization-waterfall.md)
+- [BOS Llama 3.2 3B 64K 5-run 및 layer-0 waterfall](benchmark-results/2026-08-09-bos-llama32-3b-64k-five-run-layer-waterfall.md)
+- [BOS SDPA K256 inner-K128 streaming A/B](benchmark-results/2026-08-10-bos-sdpa-inner-k-streaming-ab.md)
+- [BOS SDPA K128/K256 chunk 고정비 분해](benchmark-results/2026-08-10-bos-sdpa-kchunk-fixed-cost-decomposition.md)
+- [BOS SDPA K128 3-endpoint vs 6-endpoint wait 분해](benchmark-results/2026-08-11-bos-sdpa-3ep-vs-6ep-metrics.md)
+- [BOS Llama 3.2 3B 56K all-BF16 layer-0 profile](benchmark-results/2026-08-12-bos-llama32-3b-56k-bf16-layer0-profile.md)
 
 ### Investigations
 
+- [BOS SDPA optimization effect reasoning](investigations/2026-08-11-bos-sdpa-optimization-effect-reasoning.md)
+- [BOS stable SDPA·MLP core-role mapping 복원](investigations/2026-08-08-bos-sdpa-mlp-core-role-mapping.md)
 - [BOS SDPA grouped concat full-model exact gate](investigations/2026-08-05-bos-sdpa-grouped-concat-full-model-exact-gate.md)
 - [BOS Llama 3.2 test-demo KV-cache 분석](investigations/2026-07-24-bos-llama32-kv-cache-test-demo.md)
 - [Llama 3.1 8B KV-cache 분석](investigations/2026-07-25-llama31-8b-kv-cache.md)
