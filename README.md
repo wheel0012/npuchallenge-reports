@@ -19,6 +19,7 @@
 
 ### Benchmark results
 
+- [BOS 1/2-reader single-bank DRAM-sharded saturation](benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md)
 - [Llama 3.2 3B 64K SDPA DRAM benchmark](benchmark-results/2026-07-26-llama32-3b-64k-sdpa-dram.md)
 - [Llama 3.2 3B 20-core GEMM benchmark](benchmark-results/2026-07-26-llama32-3b-gemm-20core.md)
 - [BOS 20-core, 6-endpoint DRAM saturation benchmark](benchmark-results/2026-07-31-bos-dram-saturation-20core-6-endpoint.md)
@@ -54,6 +55,9 @@
 
 ### Investigations
 
+- [BOS stable optimization roofline justification](investigations/2026-08-16-bos-stable-optimization-roofline-justification.md)
+- [BOS workload-specific memory benchmark design](investigations/2026-08-15-bos-workload-specific-memory-benchmark-design.md)
+- [Empirical Architecture Characterization and Bottleneck-Guided Optimization](investigations/2026-08-13-empirical-architecture-characterization-and-bottleneck-guided-optimization.md)
 - [BOS SDPA optimization effect reasoning](investigations/2026-08-11-bos-sdpa-optimization-effect-reasoning.md)
 - [BOS stable SDPA·MLP core-role mapping 복원](investigations/2026-08-08-bos-sdpa-mlp-core-role-mapping.md)
 - [BOS SDPA grouped concat full-model exact gate](investigations/2026-08-05-bos-sdpa-grouped-concat-full-model-exact-gate.md)
