@@ -1,12 +1,12 @@
 # Report manifest
 
-기준일: 2026-08-16
+기준일: 2026-08-17
 
 중앙 파일은 아래 원본의 byte-for-byte 스냅샷이다. SHA-256은 중앙 파일을 기준으로 한다.
 
 | 유형 | 중앙 파일 | 원본 | SHA-256 |
 |---|---|---|---|
-| benchmark | `benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md` | canonical report (중앙 저장소에서 직접 작성) | `1318dd53ed0b3737d74ef478aa59574d084c2fc46e2762ca17a4aad6341e202e` |
+| benchmark | `benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md` | canonical report (중앙 저장소에서 직접 작성) | `b12fc258748f2dc551f46876bb3b69176d23b0f26b339eacd7343891a639a6b3` |
 | benchmark | `benchmark-results/2026-07-26-llama32-3b-64k-sdpa-dram.md` | `/home/iris_hb4/profiler_runs/DRAM_BENCHMARK_README.md` | `538e7ebe746d5ae297cbf2cad29f1e1b66e4338e06da1e1402bcc72cee0a2148` |
 | benchmark | `benchmark-results/2026-07-26-llama32-3b-gemm-20core.md` | `/home/iris_hb4/gemm_benchmark_llama32_3b_20core_2026_07_26/README.md` | `9ed435b348c46cb3300e553bc0ce81a53ba514982fbfaab329f8ec9b4836ba67` |
 | benchmark | `benchmark-results/2026-07-31-bos-dram-saturation-20core-6-endpoint.md` | `/home/iris_hb4/tt-metal-hb4/tests/tt_metal/tt_metal/perf_microbenchmark/12_dram_20_core_6_noc_read/README.md` | `37bf584967df7d2186b6805283727aa4880eee5edd81d6777830ca62367c2975` |
@@ -39,6 +39,7 @@
 | benchmark | `benchmark-results/2026-08-10-bos-sdpa-kchunk-fixed-cost-decomposition.md` | canonical report (중앙 저장소에서 직접 작성) | `e4242f3d2856e62b7af34c0edf58615c2dcd212e7c3def21c4cb273d82ffb922` |
 | benchmark | `benchmark-results/2026-08-11-bos-sdpa-3ep-vs-6ep-metrics.md` | canonical report (중앙 저장소에서 직접 작성) | `b58c4a24761c487ad8f266415a7115710443f980ad56ccf9616d666739d89db5` |
 | benchmark | `benchmark-results/2026-08-12-bos-llama32-3b-56k-bf16-layer0-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `b18cabe8e2473d4748a28d8673afd5828e0d08e33e4c73a835e12fb7406fbaa1` |
+| investigation | `investigations/2026-08-17-bos-dram-characterization-to-sdpa-mlp.md` | canonical report (중앙 저장소에서 직접 작성) | `43df3b37a21671b57ac3f08137672f8523df1904df6a608cb349aeda17a840a3` |
 | investigation | `investigations/2026-08-16-bos-stable-optimization-roofline-justification.md` | canonical report (중앙 저장소에서 직접 작성) | `7744a9f9a5ddcde40cf3b627e4ab8df5ab78f8deece72b4636381f890c8b9fed` |
 | investigation | `investigations/2026-08-15-bos-workload-specific-memory-benchmark-design.md` | canonical report (중앙 저장소에서 직접 작성) | `5a74a7c635a967b87cd06e2eb9dc3b20cfb9daa97ec4d13265149ca460c3f944` |
 | investigation | `investigations/2026-08-13-empirical-architecture-characterization-and-bottleneck-guided-optimization.md` | canonical report (중앙 저장소에서 직접 작성) | `214b4002c4a397ba129b9238165a7999638d14f067b29e494acd27d7e3e550b9` |

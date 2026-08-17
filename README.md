@@ -55,6 +55,7 @@
 
 ### Investigations
 
+- [BOS DRAM characterization에서 SDPA·MLP 최적화까지](investigations/2026-08-17-bos-dram-characterization-to-sdpa-mlp.md)
 - [BOS stable optimization roofline justification](investigations/2026-08-16-bos-stable-optimization-roofline-justification.md)
 - [BOS workload-specific memory benchmark design](investigations/2026-08-15-bos-workload-specific-memory-benchmark-design.md)
 - [Empirical Architecture Characterization and Bottleneck-Guided Optimization](investigations/2026-08-13-empirical-architecture-characterization-and-bottleneck-guided-optimization.md)

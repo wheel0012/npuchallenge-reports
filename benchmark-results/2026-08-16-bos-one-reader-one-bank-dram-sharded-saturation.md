@@ -322,13 +322,13 @@ low-level API는 `NOC_AT_LEN_BE`에 16 KiB를 직접 기록한다. TT dataflow A
 Physical bank0의 두 endpoints x0/x1에 readers를 균등 배치했다. Endpoint x0는 NoC0, x1은 NoC1을
 사용한다. 모든 reader는 해당 endpoint-local shard를 unit-stride 16 KiB one-packet으로 읽었다.
 
-| total readers | readers per endpoint | bandwidth | min--max | retire wait (timestamp run) | 2-reader 대비 |
-|---:|---:|---:|---:|---:|---:|
-| 1 | 1:0 | 28.209 GB/s | 28.104--28.301 | 79.09% | -45.78% |
-| 2 | 1:1 | 52.023 GB/s | 51.959--52.099 | 81.72% | 기준 |
-| 4 | 2:2 | 51.569 GB/s | 51.525--51.641 | 90.99% | -0.87% |
-| 6 | 3:3 | 51.378 GB/s | 51.275--51.503 | 94.03% | -1.24% |
-| 8 | 4:4 | 51.316 GB/s | 51.282--51.376 | 95.51% | -1.36% |
+| total readers | readers per endpoint | bandwidth | min--max | retire wait (timestamp run) | latency mean (timestamp run) | 2-reader 대비 |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1 | 1:0 | 28.209 GB/s | 28.104--28.301 | 79.09% | 2,689 cycles | -45.78% |
+| 2 | 1:1 | 52.023 GB/s | 51.959--52.099 | 81.72% | 2,949 cycles | 기준 |
+| 4 | 2:2 | 51.569 GB/s | 51.525--51.641 | 90.99% | 6,272 cycles | -0.87% |
+| 6 | 3:3 | 51.378 GB/s | 51.275--51.503 | 94.03% | 9,634 cycles | -1.24% |
+| 8 | 4:4 | 51.316 GB/s | 51.282--51.376 | 95.51% | 12,943 cycles | -1.36% |
 
 Retire wait는 profiler-free bandwidth 10회 평균과 별도의 timestamp breakdown run이다. 4-reader와
 6-reader breakdown은 각각 51.727 GB/s, 51.268 GB/s에서 측정했다. 로그:
@@ -342,6 +342,7 @@ Retire wait는 profiler-free bandwidth 10회 평균과 별도의 timestamp break
 | readers | breakdown bandwidth | issue | retire wait | latency mean | wait p50/p95 |
 |---:|---:|---:|---:|---:|---:|
 | 2 | 52.128 GB/s | 11.37% | 81.72% | 2,949 cycles | 1,312/1,456 |
+| 6 | 51.268 GB/s | 3.69% | 94.03% | 9,634 cycles | 4,664/4,873 |
 | 8 | 51.397 GB/s | 2.76% | 95.51% | 12,943 cycles | 6,329/6,529 |
 
 2→8 readers에서 latency는 4.39배가 되고 retire wait는 +13.79 percentage points지만 bandwidth는
