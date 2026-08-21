@@ -19,6 +19,8 @@
 
 ### Benchmark results
 
+- [BOS interleaved bank-run burst 및 L1 reorder A/B](benchmark-results/2026-08-20-bos-interleaved-bank-run-reorder-ab.md)
+- [BOS Llama 3.2 3B 64K accuracy actual-prefill stable layer-0 profile](benchmark-results/2026-08-18-bos-llama32-3b-64k-accuracy-actual-prefill-profile.md)
 - [BOS 1/2-reader single-bank DRAM-sharded saturation](benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md)
 - [Llama 3.2 3B 64K SDPA DRAM benchmark](benchmark-results/2026-07-26-llama32-3b-64k-sdpa-dram.md)
 - [Llama 3.2 3B 20-core GEMM benchmark](benchmark-results/2026-07-26-llama32-3b-gemm-20core.md)

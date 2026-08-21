@@ -5,6 +5,7 @@ Performance and synchronization experiments are stored as separate runs; failed 
 
 | Run | Status | Purpose | Key result |
 |---|---|---|---|
+| `sdpa_chunk_phase_6ep_2026_08_21` / `sdpa_kchunk_production_repro_2026_08_21` / `sdpa_kchunk_production_memory_breakdown_2026_08_21` | success | production K128/K256 reproduction and reader memory breakdown; randomized-page phase is auxiliary | production max-core -19.00%; KV service -19.72%; K+V barrier +584.918 us while non-barrier remainder -1,074.782 us; all runs normal close |
 | `llama31_8b_speculative_4lane_sdpa_tracy_2026_07_22_07_39_07` | success | 1B draft + 8B target, 4-lane, 47-token prompt, one round | decode SDPA kernel 2.229 ms / all decode kernels 321.103 ms = 0.694% |
 | `llama31_8b_speculative_4lane_sdpa_wall_2026_07_22_07_43_54` | success, intrusive | per-layer synchronize upper-bound measurement | 1B 15.496 ms + 8B 12.173 ms; sync overhead included |
 | `llama31_8b_vanilla_sdpa_tracy_2026_07_22_07_52_00` | success | vanilla Llama 3.1 8B, batch 1, 47-token prompt | SDPA 6.232 ms / 10 steps; 0.310% of summed decode kernels |
@@ -67,6 +68,9 @@ Performance and synchronization experiments are stored as separate runs; failed 
 | `llama32_3b_64k_layer0_waterfall_2026_08_09_17_26_00` | success | 네 누적 구성의 profiler-free gate와 signposted layer-0 Tracy/device profile | measured FW sum 7.579298→6.108996→4.788464→4.663924 ms; SDPA 3.497640→2.039428 ms; all gates/profiles normal close/exit 0 |
 | `sdpa_endpoint_3ep_vs_6ep_metrics_2026_08_11` | success | isolated 64K K128 dual-NoC SDPA, endpoint count 3/6 reader-barrier 및 input-wait 분해 | critical kernel -20.09%; K+V reader barrier mean -66.67%; TRISC0 K+V CB wait mean -94.25%; PCC 동일; four captures normal close/exit 0 |
 | `llama32_3b_56k_bf16_layer0_perf_2026_08_12_10_40_00` | success | all-BF16, synthetic 56K paged KV, optimized layer 0, warmup-excluded Tracy/device profile와 별도 memory DB | gate 7.046747 ms; Tracy wall 7.144251 ms; SDPA wall 3.086033 ms; 22 ops; useful-payload estimate 61.06 GB/s; Visualizer contract complete; all runs exit 0 |
+| `llama32_3b_64k_accuracy_actual_prefill_stable_visualizer_2026_08_18_05_50_00` | success | accuracy preset, stable final optimization, actual 65,535-token prefill, layer 0, separate Tracy and detailed-memory captures | 22 ops; FW sum 5.425120 ms; SDPA 2.040840 ms; memory DB integrity ok and errors 0; Visualizer contract complete; all runs exit 0 |
+| `mlp_actual_vanilla_endpoint_trace_2026_08_18` | partial evidence, NoC conversion timeout exit 124 | actual opt-in-off isolated MLP gate and endpoint trace | gate PCC 0.9996410623, 2.291724 ms, normal close; capture PCC 동일, 2.372136 ms and `MLP_COMPLETED`; raw timer 12345 shows 16 readers, physical endpoints `(2,3)/(3,3)` at 8:8, NoC1 only; converter consumed non-NoC data-zero markers as event type 0, no close, child D→Z/<defunct>, device quarantined |
+| `mlp_actual_vanilla_performance_endpoint_trace_2026_08_18` | partial evidence, NoC conversion abort + timeout SIGKILL/exit 137 | performance preset actual vanilla isolated MLP endpoint trace | PCC 0.9869040195, 2.101122 ms and `MLP_COMPLETED`; raw timer 12345 shows 16 readers, physical endpoints `(2,3)/(3,3)` at 8:8, NoC1 only; W1/W3 BFP4 576 B requests and W2 BFP8 1,088 B requests; no close/converted JSON, child D→Z/<defunct>, device quarantined |
 
 Visualizer-compatible performance artifacts are under each successful Tracy run's `perf_report_visualize/` directory.
 

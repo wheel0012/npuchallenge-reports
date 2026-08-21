@@ -1,12 +1,14 @@
 # Report manifest
 
-기준일: 2026-08-17
+기준일: 2026-08-20
 
 중앙 파일은 아래 원본의 byte-for-byte 스냅샷이다. SHA-256은 중앙 파일을 기준으로 한다.
 
 | 유형 | 중앙 파일 | 원본 | SHA-256 |
 |---|---|---|---|
-| benchmark | `benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md` | canonical report (중앙 저장소에서 직접 작성) | `b12fc258748f2dc551f46876bb3b69176d23b0f26b339eacd7343891a639a6b3` |
+| benchmark | `benchmark-results/2026-08-20-bos-interleaved-bank-run-reorder-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `43a1ec72e93660e35dd9fa7c9b70ae0e4ac03a5b6b02e2655b96f660297aaa02` |
+| benchmark | `benchmark-results/2026-08-18-bos-llama32-3b-64k-accuracy-actual-prefill-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `c767d854cf994be6fd277a80e93f6793ce9725271d2fdd4ba041ef78a48b00d6` |
+| benchmark | `benchmark-results/2026-08-16-bos-one-reader-one-bank-dram-sharded-saturation.md` | canonical report (중앙 저장소에서 직접 작성) | `b76350063e4bf8ed606381bac83337fcede7ac0bc3a846cfbb86811a8df26e3c` |
 | benchmark | `benchmark-results/2026-07-26-llama32-3b-64k-sdpa-dram.md` | `/home/iris_hb4/profiler_runs/DRAM_BENCHMARK_README.md` | `538e7ebe746d5ae297cbf2cad29f1e1b66e4338e06da1e1402bcc72cee0a2148` |
 | benchmark | `benchmark-results/2026-07-26-llama32-3b-gemm-20core.md` | `/home/iris_hb4/gemm_benchmark_llama32_3b_20core_2026_07_26/README.md` | `9ed435b348c46cb3300e553bc0ce81a53ba514982fbfaab329f8ec9b4836ba67` |
 | benchmark | `benchmark-results/2026-07-31-bos-dram-saturation-20core-6-endpoint.md` | `/home/iris_hb4/tt-metal-hb4/tests/tt_metal/tt_metal/perf_microbenchmark/12_dram_20_core_6_noc_read/README.md` | `37bf584967df7d2186b6805283727aa4880eee5edd81d6777830ca62367c2975` |
@@ -36,11 +38,11 @@
 | benchmark | `benchmark-results/2026-08-09-bos-llama32-3b-64k-optimization-waterfall.md` | canonical report (중앙 저장소에서 직접 작성) | `83cde94bc0dc2df106d35a688625b9d75f1521203e8efaa74d9446dd7caf6860` |
 | benchmark | `benchmark-results/2026-08-09-bos-llama32-3b-64k-five-run-layer-waterfall.md` | canonical report (중앙 저장소에서 직접 작성) | `3199379aa81984406e8629eaf7a309e8397f7eba657458b4c6c636edf43d82e5` |
 | benchmark | `benchmark-results/2026-08-10-bos-sdpa-inner-k-streaming-ab.md` | canonical report (중앙 저장소에서 직접 작성) | `5479f52c31a1dbbf8bdc744dfa0fdd04b5544052662e29c1835c51efb0ef9305` |
-| benchmark | `benchmark-results/2026-08-10-bos-sdpa-kchunk-fixed-cost-decomposition.md` | canonical report (중앙 저장소에서 직접 작성) | `e4242f3d2856e62b7af34c0edf58615c2dcd212e7c3def21c4cb273d82ffb922` |
-| benchmark | `benchmark-results/2026-08-11-bos-sdpa-3ep-vs-6ep-metrics.md` | canonical report (중앙 저장소에서 직접 작성) | `b58c4a24761c487ad8f266415a7115710443f980ad56ccf9616d666739d89db5` |
+| benchmark | `benchmark-results/2026-08-10-bos-sdpa-kchunk-fixed-cost-decomposition.md` | canonical report (중앙 저장소에서 직접 작성) | `76ed0d39776390cdbd873af11f4cbb1eb5a22a5a334b41d079a2ce1e799615f3` |
+| benchmark | `benchmark-results/2026-08-11-bos-sdpa-3ep-vs-6ep-metrics.md` | canonical report (중앙 저장소에서 직접 작성) | `3de802334d9dff3b1b2f4fc8c63f9b128043b9e4cec4b47d1f3c26b145f07aee` |
 | benchmark | `benchmark-results/2026-08-12-bos-llama32-3b-56k-bf16-layer0-profile.md` | canonical report (중앙 저장소에서 직접 작성) | `b18cabe8e2473d4748a28d8673afd5828e0d08e33e4c73a835e12fb7406fbaa1` |
-| investigation | `investigations/2026-08-17-bos-dram-characterization-to-sdpa-mlp.md` | canonical report (중앙 저장소에서 직접 작성) | `43df3b37a21671b57ac3f08137672f8523df1904df6a608cb349aeda17a840a3` |
-| investigation | `investigations/2026-08-16-bos-stable-optimization-roofline-justification.md` | canonical report (중앙 저장소에서 직접 작성) | `7744a9f9a5ddcde40cf3b627e4ab8df5ab78f8deece72b4636381f890c8b9fed` |
+| investigation | `investigations/2026-08-17-bos-dram-characterization-to-sdpa-mlp.md` | canonical report (중앙 저장소에서 직접 작성) | `6f5babb4c97fa184a4888867a34a9f53f1f11c35941bc3e1584db3914f785a1c` |
+| investigation | `investigations/2026-08-16-bos-stable-optimization-roofline-justification.md` | canonical report (중앙 저장소에서 직접 작성) | `649a70674011d81de0f1bca5008be63d4dc598aa3324dbf51d273a4ec6629282` |
 | investigation | `investigations/2026-08-15-bos-workload-specific-memory-benchmark-design.md` | canonical report (중앙 저장소에서 직접 작성) | `5a74a7c635a967b87cd06e2eb9dc3b20cfb9daa97ec4d13265149ca460c3f944` |
 | investigation | `investigations/2026-08-13-empirical-architecture-characterization-and-bottleneck-guided-optimization.md` | canonical report (중앙 저장소에서 직접 작성) | `214b4002c4a397ba129b9238165a7999638d14f067b29e494acd27d7e3e550b9` |
 | investigation | `investigations/2026-08-11-bos-sdpa-optimization-effect-reasoning.md` | canonical report (중앙 저장소에서 직접 작성) | `6e61c0f3b16f0955e44e75a1052f131c980ff80c06f95e1a7ed72608a0907ea5` |
@@ -61,10 +63,10 @@
 | incident | `incidents/2026-08-02-bos-llama32-dram-sharded-prefill-validation-failure.md` | canonical report (중앙 저장소에서 직접 작성) | `176564a08e0011cf8206ca6d8bf66fb3b6b72c2d6a15c2b7df395c64b1aaa5fa` |
 | incident | `incidents/2026-08-03-bos-mlp-dual-noc-reader-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `6a6cf543d6d3ccc64a20e049256c6bdad8c3d240cd61271bf3a49f0ac1f769d5` |
 | incident | `incidents/2026-08-03-bos-mlp-prefetch-helper-write-barrier.md` | canonical report (중앙 저장소에서 직접 작성) | `2927e0d6f06fdc530869597c779767d3a1e788d8c4a29ca6bde8a10064c14a62` |
-| incident | `incidents/2026-08-05-bos-mlp-noc-profiler-invalid-transfer-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `c138490a7b1e1eb2c06a2347d272304bc6acf6f9bd8663695cb9bc23c0c1e7f4` |
-| incident | `incidents/2026-08-05-bos-mlp-6-compute-20-iteration-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `7d99826e1cc4eb0d19c7e49e8fbc6e22fe65bd14b78ecbc7ff55db7baf4af606` |
+| incident | `incidents/2026-08-05-bos-mlp-noc-profiler-invalid-transfer-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `a1bd39bed598d33610ea7c2b0a7bb5060a5cd800b8f7b8f9eff35aca2eba39e2` |
+| incident | `incidents/2026-08-05-bos-mlp-6-compute-20-iteration-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `39763219d6093aa0ef0389ab39842d3632bfc91f8c847b8dff4af08e82a522bc` |
 | incident | `incidents/2026-08-05-bos-mlp-endpoint-local-fanout2-timeout.md` | canonical report (중앙 저장소에서 직접 작성) | `a91083c921c65ee5936322581022c361eb492ffdf94a9a261349228a838d4d96` |
 | handoff | `handoffs/2026-07-21-qwen25-3b-32k-profiling.md` | `/home/iris_hb4/QWEN_AND_PROFILER_README.md` | `b7ccdfc275c11a2d554ae55bb8afdbf725316d999f404adf49a5b0adb36a2a4a` |
 | guide | `guides/gemm-benchmark-measurement.md` | `/home/iris_hb4/GEMM_BENCHMARK_GUIDE_KO.md` | `2c1c7858deb47870bd8b90b97484095fd4cbade1c2d09d37f043e0eeb1dd2643` |
 | guide | `guides/tt-metal-venv-path.md` | `/home/iris_hb4/TT_METAL_VENV_PATH_GUIDE_KO.md` | `da9bd20162b7d626ff2b83a5659eba1b6c65c1f11861b7cddc2b2d96541d06c9` |
-| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `3670ba1042d87f6b4bebdb5c17087d202492079c5628082c1c4e198e4b04225b` |
+| index | `indexes/profiler-runs.md` | canonical index (중앙 저장소에서 직접 갱신) | `fb903aafd04a7ae6533f6057c39982a5c45c25d9872396ed9aeee90fe5e97ea0` |

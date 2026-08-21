@@ -89,6 +89,13 @@ write traffic, CB synchronization, compute cadence를 포함한 application이 �
 
 ## 2. Roofline model
 
+> **2026-08-18 metric clarification:** 발표 roofline은 padding을 포함한 issued OI와 issued TFLOP/s를
+> 일관되게 사용한다. Padding 때문에 algorithmic/effective OI는 더 낮다는 caveat를 함께 표시한다.
+> 최신 그림과 exact source-duration 재계산값은
+> [2026-08-17 통합 보고서](2026-08-17-bos-dram-characterization-to-sdpa-mlp.md)의 Section 7.1 및
+> Appendix C를 사용한다. Compute reference는 `3×4 = 12` active-worker large-GEMM 직접 측정
+> `14.3573/27.6356 TFLOP/s`이며, memory reference는 `95.262--96.139 GB/s` empirical band다.
+
 Memory roof:
 
 ```text

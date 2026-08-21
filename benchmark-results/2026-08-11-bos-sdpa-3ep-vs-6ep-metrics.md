@@ -210,3 +210,117 @@ timeout --signal=INT --kill-after=15s 180s \
 ```
 
 `reader`를 `input_wait`, endpoint count를 `3|6`으로 바꿔 four captures를 만든다.
+
+
+## 2026-08-19 K/V issued-byte accounting 검증
+
+### 결론
+
+기존의 SDPA 60--70 GB/s는 physical DRAM bus counter가 아니라 **K/V payload bytes를 SDPA reader 또는
+kernel elapsed time으로 나눈 effective delivery rate**다. 이번에는 reader kernel이 실제로 실행하는 loop
+bounds와 tile encoding 크기로 코어별 issued K/V bytes를 기록하고, 전체 reader service 시작/종료 timestamp를
+동시에 기록해 분자와 분모를 직접 맞췄다.
+
+Stable K256·6-endpoint isolated SDPA 64K에서 다음을 얻었다.
+
+| Metric | Value |
+|---|---:|
+| Active SDPA reader cores | 16 |
+| K/V encoded bytes issued per core | 8,912,896 B |
+| Aggregate K/V encoded bytes issued | 142,606,336 B |
+| Logical useful K/V bytes, 1 B/element | 134,217,728 B |
+| BFP8 tile encoding overhead | 6.25% |
+| Global reader service envelope | 1,338,066 cycles = 2,058.563 us |
+| Encoded issued rate / reader envelope | **69.275 GB/s** |
+| Logical useful rate / reader envelope | **65.200 GB/s** |
+| Device kernel duration | 2,098.660 us |
+| Encoded issued rate / whole kernel | **67.951 GB/s** |
+| Logical useful rate / whole kernel | **63.954 GB/s** |
+
+따라서 60--70 GB/s 범위 자체는 산술적으로 재현된다. 이전 K128 6-endpoint 보고서의 59.199 GB/s도
+같은 142.606 MB encoded K/V payload를 당시 2.409 ms critical kernel span으로 나눈 값과 일치한다.
+다만 명칭은 `DRAM bandwidth`보다 `effective encoded K/V delivery rate`가 정확하다.
+
+### 계측 정의
+
+`TT_METAL_SDPA_DECODE_CHUNK_PHASE_PROFILE=reader`일 때만 다음 timestamp data를 기록하도록 했다.
+Unset production path에는 marker와 byte 산식이 컴파일되지 않는다.
+
+- `SDPA_KV_SERVICE_START`: page-table 준비 뒤, 첫 head/chunk의 CB reserve·주소 계산·K/V issue 직전
+- `SDPA_KV_SERVICE_END`: 마지막 K/V completion barrier와 CB publication 뒤
+- marker data: 해당 reader가 실행할 K/V NoC payload byte 수
+
+일반 paged BFP8 path의 코어별 issued bytes는 runtime assignment로 계산한다.
+
+```text
+assigned_chunks × dynamic_chunk_tile_rows × assigned_streams
+  × (DHt × encoded_K_tile_bytes + vDHt × encoded_V_tile_bytes)
+```
+
+이번 구성에서는 16개 reader가 각각 8,912,896 B를 기록했고 start/end marker도 각각 16개씩 존재했다.
+총 142,606,336 B는 64K × 8 KV heads × 128 head dim × K/V 2개 × 1 B의 logical
+134,217,728 B보다 6.25% 크다. BFP8 tile의 encoded transfer size를 사용했기 때문이다.
+
+`SERVICE_START→END`는 순수 DRAM service time이 아니다. 다음을 포함한다.
+
+- page translation 이후 K/V address generation
+- NoC read issue와 completion barrier
+- CB reserve/publication
+- consumer가 CB를 비울 때까지의 backpressure
+
+Q, page table, mask, output traffic은 issued K/V bytes에서 제외했다. NoC packet/header overhead, controller command,
+retry 및 physical bus occupancy도 세지 않는다. 따라서 이 값은 exact K/V payload accounting이지만 physical DRAM
+utilization counter는 아니다.
+
+### 실행 구성
+
+- board: custom 20-core BOS NPU
+- runtime/code architecture: Blackhole
+- available worker grid: 5×4 = 20 cores
+- active SDPA reader/compute cores: 16
+- physical DRAM: 3 banks, 6 worker endpoints
+- endpoint load x0..x5: 3/2/3/3/3/2
+- reader NoC load: NoC0/NoC1 = 8/8
+- sequence/current position: 65536/65535
+- Q heads/KV heads/head dim: 24/8/128
+- K/V dtype/layout: BFP8_B, DRAM interleaved, paged KV
+- K chunk/page block: 256/32 tokens
+- correctness: PCC 0.9943993275067777
+- profiler: one isolated operation, no NoC trace
+
+K/V barrier 누적은 16-reader 평균 K 537.190 us, V 545.405 us, 합 1,082.595 us였다. 이는 service
+envelope보다 작다. Barrier 합만으로는 address generation, issue, CB backpressure와 K/V-compute overlap을 설명하지
+못한다. Reader envelope가 whole-kernel duration의 98.09%인 것도 “DRAM이 98% busy”라는 뜻이 아니라, reader가
+compute와 함께 거의 kernel 전 구간에 걸쳐 살아 있다는 뜻이다.
+
+Profiler CSV의 `PM REQ I BW=51.536`도 별도 performance-model 입력 정의를 사용하므로 67.951 GB/s와 같은
+metric이 아니다. 발표에서는 아래 세 숫자를 섞지 않는다.
+
+1. logical useful K/V rate: 63.954 GB/s over whole kernel
+2. encoded issued K/V rate: 67.951 GB/s over whole kernel
+3. physical DRAM utilization: 이번 계측으로는 미측정
+
+### Microbenchmark와의 관계
+
+Interleaved DRAM microbenchmark의 8 KiB·20-reader 최고 57.715 GB/s와 SDPA의 67.951 GB/s를 동일 ceiling의
+utilization 비율로 비교하지 않는다. 양쪽 모두 payload/time 형태지만 request geometry, address mapping,
+reader lifetime, working-set 반복과 CB/compute coupling이 다르다. 이번 결과는 SDPA 수치의 byte/time accounting을
+검증한 것이며, physical controller throughput이나 microbenchmark 대비 utilization을 검증한 것은 아니다.
+
+### 재현 명령
+
+```bash
+env TT_METAL_DEVICE_PROFILER=1 TT_METAL_SDPA_DECODE_CHUNK_PHASE_PROFILE=reader SDPA_SEQ_LEN=65536 SDPA_K_CHUNK_SIZE=256 SDPA_BLOCK_SIZE=32 TT_METAL_SDPA_DECODE_DUAL_NOC=1 TT_METAL_SDPA_DECODE_ENDPOINT_COUNT=6 TT_METAL_SDPA_DECODE_PAIR_BALANCED_ENDPOINTS=1 TT_METAL_SDPA_DECODE_BANK_BALANCED_ENDPOINTS=1 TT_METAL_SDPA_DECODE_SIX_READER_SHARDED=0 TT_METAL_SDPA_DECODE_REDUCE_ONLY_HELPER=0 timeout --signal=INT --kill-after=15s 180s /home/iris_hb4/tt-metal-hb4/python_env/bin/python -m tracy -p -r --check-exit-code --sync-host-device -o /home/iris_hb4/profiler_runs/sdpa_kv_issued_envelope_final_2026_08_19_03_24_00 -n sdpa_kv_issued_envelope_k256_6ep_final tests/bos_model/run_sdpa_kchunk_profile.py
+```
+
+### Artifacts와 변경
+
+- final run: `/home/iris_hb4/profiler_runs/sdpa_kv_issued_envelope_final_2026_08_19_03_24_00`
+- device CSV SHA-256: `1869a5bc6ce22501815b1a59418f6c6ff5986af430a053ba60c15938a149850e`
+- ops CSV SHA-256: `b969b73a5eaaa0c5fd81558d43769b19b8b05e35f575de209e4be2a2741da603`
+- source patch: `/home/iris_hb4/tmp/codex-patches/20260819-033000-sdpa-kv-envelope.patch`
+- byte-formula fix: `/home/iris_hb4/tmp/codex-patches/20260819-034000-sdpa-kv-byte-fix.patch`
+
+첫 capture는 DHt/vDHt tile-column multiplier를 누락해 issued bytes를 정확히 4배 과소계산했다. 즉시 공식을
+수정하고 correctness를 다시 통과한 뒤 final capture를 생성했다. 첫 capture의 byte 수치는 폐기하며 final
+artifact만 canonical 결과로 사용한다.
